@@ -104,6 +104,7 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
 .pcard.s-bajo{border-left-color:var(--amber);}
 .pcard.s-crit{border-left-color:var(--red);}
 .pcard.s-zero{border-left-color:var(--red-deep);}
+.pcard.s-dose{border-left-color:var(--steel);}
 .pcard .info{min-width:0;flex:1;}
 .pcard .info b{font-size:1.05rem;font-weight:600;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .pcard .info small{color:var(--muted);font-size:.8rem;}
@@ -456,11 +457,41 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
   </div>
 </section>
 
+<!-- ===================== INSEMINACIÓN ===================== -->
+<section class="view" id="view-insem">
+  <div class="view-title">Inseminación</div>
+  <div class="view-sub">Dosis de semen (pajuelas) · registro manual</div>
+
+  <div class="btn-row" style="margin-bottom:16px;">
+    <button class="btn btn-pri btn-sm" style="flex:1;padding:15px;" onclick="openInsemIn()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Ingreso de dosis
+    </button>
+    <button class="btn btn-sm" style="flex:1;padding:15px;background:var(--steel);color:#fff;" onclick="openInsemOut()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg> Salida de dosis
+    </button>
+  </div>
+
+  <div class="stats" style="grid-template-columns:repeat(2,1fr);">
+    <div class="stat"><div class="v num" id="inTipos">0</div><div class="l">Tipos de dosis</div></div>
+    <div class="stat"><div class="v num" id="inTotal">0</div><div class="l">Dosis en termo</div></div>
+  </div>
+
+  <h3 style="font-size:1.25rem;color:var(--green-900);margin-bottom:10px;">Inventario de dosis</h3>
+  <div class="plist" id="insemList"></div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;">
+    <h3 style="font-size:1.25rem;color:var(--green-900);">Movimientos recientes</h3>
+    <button class="btn btn-ghost btn-sm" onclick="exportInsemCSV()" style="padding:8px 12px;font-size:.85rem;">Exportar CSV</button>
+  </div>
+  <div id="insemHist"></div>
+</section>
+
 <!-- ===================== NAV ===================== -->
 <nav class="nav">
   <button class="on" data-v="stock" onclick="go('stock')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>Stock</button>
   <button data-v="ingreso" onclick="go('ingreso')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Ingreso</button>
   <button data-v="salida" onclick="go('salida')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Salida</button>
+  <button data-v="insem" onclick="go('insem')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/><path d="M9 13h6" stroke-width="1.6"/></svg>Dosis</button>
   <button data-v="resumen" onclick="go('resumen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16l4-5 3 3 5-7"/></svg>Resumen</button>
   <button data-v="config" onclick="go('config')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Config</button>
 </nav>
@@ -507,15 +538,46 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
   </div>
 </div>
 
+<!-- ===================== INSEMINACIÓN: INGRESO ===================== -->
+<div class="modal" id="modalInsemIn">
+  <div class="sheet">
+    <div class="sheet-h"><h2>Ingreso de dosis</h2><button class="x" onclick="closeModal('modalInsemIn')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="fcard">
+      <div class="field"><label>Nombre de la dosis (toro / genética)</label><input type="text" id="inInNombre" list="insemNames" placeholder="Ej: HF 1234 Delta / Jersey ABS"><datalist id="insemNames"></datalist></div>
+      <div class="field"><label>Cantidad de dosis que ingresan</label>
+        <div class="qty-row"><button class="stepper" onclick="stepQty('inIn',-1)">−</button><input type="number" id="inInQty" inputmode="numeric" min="1" value="1"><button class="stepper" onclick="stepQty('inIn',1)">+</button></div>
+      </div>
+      <div class="field" style="margin-bottom:0;"><label>Proveedor / origen (opcional)</label><input type="text" id="inInProv" placeholder="Ej: Cooprinsem, ABS, CGC"></div>
+    </div>
+    <button class="btn btn-pri" onclick="saveInsemIngreso()">Guardar ingreso</button>
+  </div>
+</div>
+
+<!-- ===================== INSEMINACIÓN: SALIDA ===================== -->
+<div class="modal" id="modalInsemOut">
+  <div class="sheet">
+    <div class="sheet-h"><h2>Salida de dosis</h2><button class="x" onclick="closeModal('modalInsemOut')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="fcard">
+      <div class="field"><label>Dosis utilizada</label><select id="inOutSel"></select></div>
+      <div class="field"><label>Cantidad usada</label>
+        <div class="qty-row"><button class="stepper" onclick="stepQty('inOut',-1)">−</button><input type="number" id="inOutQty" inputmode="numeric" min="1" value="1"><button class="stepper" onclick="stepQty('inOut',1)">+</button></div>
+      </div>
+      <div class="field"><label>Inseminador / quién aplicó</label><input type="text" id="inOutPers" list="insemPersons" placeholder="Nombre"><datalist id="insemPersons"></datalist></div>
+      <div class="field" style="margin-bottom:0;"><label>Vaca / lote / nota (opcional)</label><input type="text" id="inOutNota" placeholder="Ej: Vaca 245 · lote n13"></div>
+    </div>
+    <button class="btn btn-red" onclick="saveInsemSalida()">Registrar salida</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 /* ============ ESTADO / ALMACENAMIENTO ============ */
 const KEY='farmacia_la_aguada_v1';
 const DEFAULT_CENTROS=['Lechería Boumatic','Lechería Jersey','Lechería Robótica','Crianza','Por Distribuir'];
-let DB={ productos:{}, movimientos:[], documentos:{}, centros:[...DEFAULT_CENTROS], personas:[], cfg:{bajo:5,critico:2} };
+let DB={ productos:{}, movimientos:[], documentos:{}, dosis:{}, insemMovs:[], centros:[...DEFAULT_CENTROS], personas:[], cfg:{bajo:5,critico:2} };
 
-function load(){ try{ const r=localStorage.getItem(KEY); if(r){ DB=Object.assign(DB,JSON.parse(r)); } }catch(e){} if(!DB.documentos)DB.documentos={}; }
+function load(){ try{ const r=localStorage.getItem(KEY); if(r){ DB=Object.assign(DB,JSON.parse(r)); } }catch(e){} if(!DB.documentos)DB.documentos={}; if(!DB.dosis)DB.dosis={}; if(!DB.insemMovs)DB.insemMovs=[]; }
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify(DB)); }catch(e){ toast('No se pudo guardar (memoria llena)','err'); } }
 
 /* ============ UTIL ============ */
@@ -527,7 +589,7 @@ function beep(){ try{ const c=new (window.AudioContext||window.webkitAudioContex
 
 /* ============ NAVEGACIÓN ============ */
 function go(v){ document.querySelectorAll('.view').forEach(e=>e.classList.remove('active')); $('view-'+v).classList.add('active'); document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); window.scrollTo(0,0);
-  if(v==='stock')renderStock(); if(v==='resumen')renderResumen(); if(v==='config')renderConfig(); if(v==='salida')renderCentrosChips(); if(v==='ingreso')renderIngreso(); }
+  if(v==='stock')renderStock(); if(v==='resumen')renderResumen(); if(v==='config')renderConfig(); if(v==='salida')renderCentrosChips(); if(v==='ingreso')renderIngreso(); if(v==='insem')renderInsem(); }
 
 /* ============ STOCK ============ */
 function renderStock(){
@@ -732,8 +794,59 @@ function exportCSV(){
   toast('CSV exportado');
 }
 function backupExport(){ download(JSON.stringify(DB),'respaldo_farmacia_'+new Date().toISOString().slice(0,10)+'.json','application/json'); toast('Respaldo descargado'); }
-function backupImport(ev){ const f=ev.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!d.productos)throw 0; if(confirm('Esto reemplazará TODOS los datos actuales. ¿Continuar?')){ DB=Object.assign({productos:{},movimientos:[],documentos:{},centros:[...DEFAULT_CENTROS],personas:[],cfg:{bajo:5,critico:2}},d); if(!DB.documentos)DB.documentos={}; save(); renderConfig(); renderStock(); toast('Datos restaurados'); } }catch(e){ toast('Archivo inválido','err'); } }; r.readAsText(f); ev.target.value=''; }
+function backupImport(ev){ const f=ev.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!d.productos)throw 0; if(confirm('Esto reemplazará TODOS los datos actuales. ¿Continuar?')){ DB=Object.assign({productos:{},movimientos:[],documentos:{},dosis:{},insemMovs:[],centros:[...DEFAULT_CENTROS],personas:[],cfg:{bajo:5,critico:2}},d); if(!DB.documentos)DB.documentos={}; if(!DB.dosis)DB.dosis={}; if(!DB.insemMovs)DB.insemMovs=[]; save(); renderConfig(); renderStock(); toast('Datos restaurados'); } }catch(e){ toast('Archivo inválido','err'); } }; r.readAsText(f); ev.target.value=''; }
 function download(content,name,type){ const b=new Blob([content],{type}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(u),1000); }
+
+/* ============ INSEMINACIÓN (dosis, manual) ============ */
+function renderInsem(){
+  const arr=Object.values(DB.dosis).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  $('inTipos').textContent=arr.length;
+  $('inTotal').textContent=arr.reduce((s,d)=>s+d.stock,0);
+  const list=$('insemList');
+  if(!arr.length){ list.innerHTML='<div class="cart-empty">Aún no hay dosis registradas.<br>Usa <b>"Ingreso de dosis"</b> para agregar las primeras.</div>'; }
+  else { list.innerHTML=arr.map(d=>{ const zero=d.stock<=0; return '<div class="pcard '+(zero?'s-zero':'s-dose')+'" onclick="editDosis(\''+d.id+'\')"><div class="info"><b>'+esc(d.nombre)+'</b><small>'+(d.proveedor?esc(d.proveedor):'dosis de semen')+'</small>'+(zero?'<br><span class="tagchip t-zero">Sin dosis</span>':'')+'</div><div class="qty"><div class="n">'+d.stock+'</div><div class="u">dosis</div></div></div>'; }).join(''); }
+  const h=$('insemHist'); const movs=[...DB.insemMovs].sort((a,b)=>b.id-a.id).slice(0,40);
+  if(!movs.length){ h.innerHTML='<div class="cart-empty">Sin movimientos todavía.</div>'; }
+  else { h.innerHTML=movs.map(m=>{ const inn=m.tipo==='ingreso'; const sub=inn?(m.proveedor?esc(m.proveedor):'Ingreso'):(esc(m.persona||'')+(m.nota?' · '+esc(m.nota):'')); return '<div class="mov"><div class="dot '+(inn?'in':'out')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="'+(inn?'M12 5v14M5 12h14':'M5 12h14M13 6l6 6-6 6')+'"/></svg></div><div class="m-info"><b>'+esc(m.nombre)+'</b><small>'+sub+' · '+fmtDate(m.fecha)+'</small></div><div class="m-qty '+(inn?'in':'out')+'">'+(inn?'+':'−')+m.cantidad+'</div></div>'; }).join(''); }
+}
+function openInsemIn(){ $('inInNombre').value=''; $('inInQty').value=1; $('inInProv').value=''; $('insemNames').innerHTML=Object.values(DB.dosis).map(d=>'<option value="'+esc(d.nombre)+'">').join(''); openModal('modalInsemIn'); }
+function saveInsemIngreso(){
+  const nombre=($('inInNombre').value||'').trim(); if(!nombre){ toast('Escribe el nombre de la dosis','warn'); return; }
+  const qty=+$('inInQty').value||0; if(qty<1){ toast('Cantidad inválida','warn'); return; }
+  const prov=($('inInProv').value||'').trim();
+  let d=Object.values(DB.dosis).find(x=>x.nombre.toLowerCase()===nombre.toLowerCase());
+  if(!d){ d={ id:'I'+Date.now(), nombre:nombre, proveedor:prov, stock:0 }; DB.dosis[d.id]=d; }
+  d.stock+=qty; if(prov)d.proveedor=prov;
+  DB.insemMovs.push({ id:Date.now(), tipo:'ingreso', dosisId:d.id, nombre:d.nombre, cantidad:qty, proveedor:prov, fecha:new Date().toISOString() });
+  save(); closeModal('modalInsemIn'); renderInsem(); toast('Ingreso de dosis: +'+qty+' '+d.nombre);
+}
+function openInsemOut(){ const arr=Object.values(DB.dosis); if(!arr.length){ toast('Primero ingresa dosis','warn'); return; }
+  $('inOutSel').innerHTML=arr.map(d=>'<option value="'+d.id+'">'+esc(d.nombre)+' — '+d.stock+' dosis</option>').join('');
+  $('inOutQty').value=1; $('inOutPers').value=''; $('inOutNota').value=''; $('insemPersons').innerHTML=DB.personas.map(p=>'<option value="'+esc(p)+'">').join(''); openModal('modalInsemOut'); }
+function saveInsemSalida(){
+  const id=$('inOutSel').value; const d=DB.dosis[id]; if(!d){ toast('Elige una dosis','warn'); return; }
+  const qty=+$('inOutQty').value||0; if(qty<1){ toast('Cantidad inválida','warn'); return; }
+  const pers=($('inOutPers').value||'').trim(); if(!pers){ toast('Indica el inseminador','warn'); return; }
+  if(qty>d.stock){ if(!confirm('Solo hay '+d.stock+' dosis de '+d.nombre+'. ¿Continuar igual (quedará en negativo)?')) return; }
+  d.stock-=qty; if(!DB.personas.includes(pers))DB.personas.push(pers);
+  const nota=($('inOutNota').value||'').trim();
+  DB.insemMovs.push({ id:Date.now(), tipo:'salida', dosisId:id, nombre:d.nombre, cantidad:qty, persona:pers, nota:nota, fecha:new Date().toISOString() });
+  save(); closeModal('modalInsemOut'); renderInsem(); refreshPersonas(); toast('Salida de dosis: −'+qty+' '+d.nombre);
+}
+function editDosis(id){ const d=DB.dosis[id]; if(!d)return;
+  const opt=prompt('Editar "'+d.nombre+'":\n• Escribe un NUEVO NOMBRE para renombrar\n• Escribe BORRAR para eliminar la dosis\n• Déjalo igual para solo ajustar el stock',d.nombre);
+  if(opt===null)return;
+  if(opt.trim().toUpperCase()==='BORRAR'){ if(confirm('¿Eliminar la dosis "'+d.nombre+'"? Se conserva el historial.')){ delete DB.dosis[id]; save(); renderInsem(); toast('Dosis eliminada'); } return; }
+  if(opt.trim())d.nombre=opt.trim();
+  const stock=prompt('Dosis disponibles de "'+d.nombre+'" (solo para corregir inventario):',d.stock); if(stock!==null && stock!=='')d.stock=+stock||0;
+  save(); renderInsem(); toast('Dosis actualizada');
+}
+function exportInsemCSV(){ if(!DB.insemMovs.length){ toast('Nada que exportar','warn'); return; }
+  const h=['Fecha','Tipo','Dosis','Cantidad','Inseminador','Proveedor','Nota'];
+  const rows=[...DB.insemMovs].sort((a,b)=>b.id-a.id).map(m=>[fmtDate(m.fecha),m.tipo,m.nombre,m.cantidad,m.persona||'',m.proveedor||'',m.nota||''].map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';'));
+  const csv='\uFEFF'+h.join(';')+'\n'+rows.join('\n');
+  download(csv,'inseminacion_'+new Date().toISOString().slice(0,10)+'.csv','text/csv'); toast('CSV exportado');
+}
 
 /* ============ MODALES ============ */
 function openModal(id){ $(id).classList.add('on'); }
