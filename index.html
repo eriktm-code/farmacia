@@ -445,15 +445,26 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
   </div>
 
   <div class="cfg-sec">
-    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/><path d="M21 4v5h-5"/></svg> Respaldo de datos</h3>
-    <p class="desc">Guarda o restaura toda la información de la app.</p>
+    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Respaldo en la nube (Google Sheets)</h3>
+    <p class="desc">Envía la información (stock, movimientos, dosis) a tu planilla de Google. Las fotos quedan en este teléfono.</p>
+    <div class="field"><label>Nombre de este dispositivo / responsable</label><input type="text" id="cloudDevice" placeholder="Ej: Erik, Boumatic, Crianza..." onchange="saveCloudCfg()"></div>
+    <div class="field"><label>URL de la nube (la pegas una vez)</label><input type="text" id="cloudUrl" placeholder="https://script.google.com/..." onchange="saveCloudCfg()"></div>
+    <div class="row-item" style="border:none;padding:6px 0;">
+      <div class="ri-name">Respaldar solo (automático al guardar)</div>
+      <input type="checkbox" id="cloudAuto" onchange="saveCloudCfg()" style="width:24px;height:24px;">
+    </div>
+    <button class="btn btn-pri btn-sm" onclick="cloudSyncNow(true)" style="width:100%;margin-top:6px;">Respaldar a la nube ahora</button>
+    <p class="note" id="cloudStatus" style="margin-top:10px;">Sin configurar todavía.</p>
+  </div>
+
+  <div class="cfg-sec">
+    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/><path d="M21 4v5h-5"/></svg> Respaldo local (archivo)</h3>
+    <p class="desc">Guarda o restaura toda la información en un archivo (incluye las fotos).</p>
     <div class="btn-row">
       <button class="btn btn-ghost btn-sm" onclick="backupExport()">Descargar respaldo</button>
       <button class="btn btn-ghost btn-sm" onclick="document.getElementById('importFile').click()">Restaurar</button>
       <input type="file" id="importFile" accept="application/json" style="display:none" onchange="backupImport(event)">
     </div>
-    <div class="spacer"></div>
-    <p class="note"><b>Sincronización entre teléfonos:</b> esta versión guarda los datos en cada teléfono por separado. Para que los 4 vean el mismo stock en tiempo real, conectamos la "libreta central" en la nube como siguiente paso.</p>
   </div>
 </section>
 
@@ -578,7 +589,37 @@ const DEFAULT_CENTROS=['Lechería Boumatic','Lechería Jersey','Lechería Robót
 let DB={ productos:{}, movimientos:[], documentos:{}, dosis:{}, insemMovs:[], centros:[...DEFAULT_CENTROS], personas:[], cfg:{bajo:5,critico:2} };
 
 function load(){ try{ const r=localStorage.getItem(KEY); if(r){ DB=Object.assign(DB,JSON.parse(r)); } }catch(e){} if(!DB.documentos)DB.documentos={}; if(!DB.dosis)DB.dosis={}; if(!DB.insemMovs)DB.insemMovs=[]; }
-function save(){ try{ localStorage.setItem(KEY,JSON.stringify(DB)); }catch(e){ toast('No se pudo guardar (memoria llena)','err'); } }
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(DB)); }catch(e){ toast('No se pudo guardar (memoria llena)','err'); } scheduleCloudSync(); }
+
+/* ============ NUBE (Google Sheets) ============ */
+const CKEY='farmacia_la_aguada_cloud';
+let CLOUD={ url:'', device:'', auto:true, lastSync:0 };
+function loadCloud(){ try{ const r=localStorage.getItem(CKEY); if(r)CLOUD=Object.assign(CLOUD,JSON.parse(r)); }catch(e){} }
+function saveCloudStore(){ try{ localStorage.setItem(CKEY,JSON.stringify(CLOUD)); }catch(e){} }
+function saveCloudCfg(){ CLOUD.device=($('cloudDevice').value||'').trim(); CLOUD.url=($('cloudUrl').value||'').trim(); CLOUD.auto=$('cloudAuto').checked; saveCloudStore(); setCloudStatus(); }
+function setCloudStatus(msg){ const el=$('cloudStatus'); if(!el)return;
+  if(msg){ el.textContent=msg; return; }
+  if(!CLOUD.url||!CLOUD.device){ el.textContent='Sin configurar todavía. Pega la URL y ponle nombre a este dispositivo.'; return; }
+  el.textContent=CLOUD.lastSync?('Conectado · última subida: '+fmtDate(new Date(CLOUD.lastSync).toISOString())):'Conectado · aún sin subir datos.'; }
+function buildCloudPayload(){
+  const stock=Object.values(DB.productos).map(p=>({nombre:p.nombre,codigo:p.barcode,stock:p.stock,estado:statusOf(p),unidad:p.unidad||'',categoria:p.categoria||''}));
+  const movimientos=DB.movimientos.map(m=>({fecha:fmtDate(m.fecha),tipo:m.tipo,producto:m.nombre,cantidad:m.cantidad,centro:m.centro||'',persona:m.persona||'',doc:(m.docTipo||'')+(m.docNum?' '+m.docNum:''),proveedor:m.proveedor||''}));
+  const dosis=Object.values(DB.dosis).map(d=>({nombre:d.nombre,stock:d.stock,proveedor:d.proveedor||''}));
+  const insem=DB.insemMovs.map(m=>({fecha:fmtDate(m.fecha),tipo:m.tipo,dosis:m.nombre,cantidad:m.cantidad,persona:m.persona||'',proveedor:m.proveedor||'',nota:m.nota||''}));
+  return { dispositivo:CLOUD.device, fecha:new Date().toISOString(), stock, movimientos, dosis, insem };
+}
+let cloudTimer=null;
+function scheduleCloudSync(){ if(!CLOUD.url||!CLOUD.device||!CLOUD.auto)return; clearTimeout(cloudTimer); cloudTimer=setTimeout(()=>cloudSyncNow(false),2500); }
+async function cloudSyncNow(manual){
+  if(!CLOUD.url){ if(manual)toast('Falta pegar la URL de la nube','warn'); return; }
+  if(!CLOUD.device){ if(manual)toast('Ponle un nombre a este dispositivo','warn'); return; }
+  setCloudStatus('Subiendo a la nube...');
+  try{
+    await fetch(CLOUD.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(buildCloudPayload())});
+    CLOUD.lastSync=Date.now(); saveCloudStore(); setCloudStatus();
+    if(manual)toast('Datos enviados. Revísalos en tu planilla de Google');
+  }catch(e){ setCloudStatus('Error al subir. Revisa la URL o tu conexión.'); if(manual)toast('No se pudo enviar','err'); }
+}
 
 /* ============ UTIL ============ */
 const $=id=>document.getElementById(id);
@@ -760,7 +801,7 @@ function renderResumen(){
 }
 
 /* ============ CONFIG ============ */
-function renderConfig(){ $('cfgBajo').value=DB.cfg.bajo; $('cfgCrit').value=DB.cfg.critico; renderCentrosCfg(); renderProdsCfg(); }
+function renderConfig(){ $('cfgBajo').value=DB.cfg.bajo; $('cfgCrit').value=DB.cfg.critico; $('cloudDevice').value=CLOUD.device||''; $('cloudUrl').value=CLOUD.url||''; $('cloudAuto').checked=CLOUD.auto!==false; setCloudStatus(); renderCentrosCfg(); renderProdsCfg(); }
 function saveCfg(){ DB.cfg.bajo=+$('cfgBajo').value||0; DB.cfg.critico=+$('cfgCrit').value||0; save(); toast('Alertas actualizadas'); }
 function renderCentrosCfg(){ $('cfgCentros').innerHTML=DB.centros.map((c,i)=>'<div class="row-item"><div class="ri-name">'+esc(c)+'</div><button class="del" onclick="delCentro('+i+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>').join(''); }
 function addCentro(){ const v=($('newCentro').value||'').trim(); if(!v)return; if(DB.centros.includes(v)){toast('Ya existe','warn');return;} DB.centros.push(v); $('newCentro').value=''; save(); renderCentrosCfg(); toast('Centro agregado'); }
@@ -853,7 +894,7 @@ function openModal(id){ $(id).classList.add('on'); }
 function closeModal(id){ $(id).classList.remove('on'); }
 
 /* ============ INICIO ============ */
-load(); renderStock(); renderCentrosChips(); renderIngreso();
+load(); loadCloud(); renderStock(); renderCentrosChips(); renderIngreso();
 </script>
 </body>
 </html>
