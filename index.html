@@ -445,16 +445,20 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
   </div>
 
   <div class="cfg-sec">
-    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Respaldo en la nube (Google Sheets)</h3>
-    <p class="desc">Envía la información (stock, movimientos, dosis) a tu planilla de Google. Las fotos quedan en este teléfono.</p>
-    <div class="field"><label>Nombre de este dispositivo / responsable</label><input type="text" id="cloudDevice" placeholder="Ej: Erik, Boumatic, Crianza..." onchange="saveCloudCfg()"></div>
-    <div class="field"><label>URL de la nube (la pegas una vez)</label><input type="text" id="cloudUrl" placeholder="https://script.google.com/..." onchange="saveCloudCfg()"></div>
+    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Sincronización en la nube (por campo)</h3>
+    <p class="desc">Los teléfonos con el MISMO "campo" comparten la misma información. Escribe igual el nombre del campo en los que deban compartir.</p>
+    <div class="field"><label>Campo / Grupo (idéntico en los que comparten)</label><input type="text" id="cloudGrupo" placeholder="Ej: campo1, campo2" onchange="saveCloudCfg()"></div>
+    <div class="field"><label>Tu nombre (opcional)</label><input type="text" id="cloudNombre" placeholder="Ej: Erik" onchange="saveCloudCfg()"></div>
+    <div class="field"><label>URL de la nube (se pega una vez)</label><input type="text" id="cloudUrl" placeholder="https://script.google.com/..." onchange="saveCloudCfg()"></div>
     <div class="row-item" style="border:none;padding:6px 0;">
-      <div class="ri-name">Respaldar solo (automático al guardar)</div>
+      <div class="ri-name">Sincronizar automático</div>
       <input type="checkbox" id="cloudAuto" onchange="saveCloudCfg()" style="width:24px;height:24px;">
     </div>
-    <button class="btn btn-pri btn-sm" onclick="cloudSyncNow(true)" style="width:100%;margin-top:6px;">Respaldar a la nube ahora</button>
-    <p class="note" id="cloudStatus" style="margin-top:10px;">Sin configurar todavía.</p>
+    <div class="btn-row">
+      <button class="btn btn-pri btn-sm" style="flex:1;" onclick="cloudConnectManual()">Conectar / Actualizar</button>
+      <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="cloudPush(true)">Subir ahora</button>
+    </div>
+    <p class="note" id="cloudStatus" style="margin-top:10px;">Sin conectar todavía.</p>
   </div>
 
   <div class="cfg-sec">
@@ -589,37 +593,68 @@ const DEFAULT_CENTROS=['Lechería Boumatic','Lechería Jersey','Lechería Robót
 let DB={ productos:{}, movimientos:[], documentos:{}, dosis:{}, insemMovs:[], centros:[...DEFAULT_CENTROS], personas:[], cfg:{bajo:5,critico:2} };
 
 function load(){ try{ const r=localStorage.getItem(KEY); if(r){ DB=Object.assign(DB,JSON.parse(r)); } }catch(e){} if(!DB.documentos)DB.documentos={}; if(!DB.dosis)DB.dosis={}; if(!DB.insemMovs)DB.insemMovs=[]; }
-function save(){ try{ localStorage.setItem(KEY,JSON.stringify(DB)); }catch(e){ toast('No se pudo guardar (memoria llena)','err'); } scheduleCloudSync(); }
+function save(){ saveLocalOnly(); scheduleCloudSync(); }
+function saveLocalOnly(){ try{ localStorage.setItem(KEY,JSON.stringify(DB)); }catch(e){ toast('No se pudo guardar (memoria llena)','err'); } }
 
-/* ============ NUBE (Google Sheets) ============ */
+/* ============ NUBE: sincronización por campo (dos vías) ============ */
 const CKEY='farmacia_la_aguada_cloud';
-let CLOUD={ url:'', device:'', auto:true, lastSync:0 };
+let CLOUD={ url:'', grupo:'', nombre:'', auto:true, version:0, lastSync:0 };
+let cloudTimer=null, cloudPoll=null;
 function loadCloud(){ try{ const r=localStorage.getItem(CKEY); if(r)CLOUD=Object.assign(CLOUD,JSON.parse(r)); }catch(e){} }
 function saveCloudStore(){ try{ localStorage.setItem(CKEY,JSON.stringify(CLOUD)); }catch(e){} }
-function saveCloudCfg(){ CLOUD.device=($('cloudDevice').value||'').trim(); CLOUD.url=($('cloudUrl').value||'').trim(); CLOUD.auto=$('cloudAuto').checked; saveCloudStore(); setCloudStatus(); }
+function saveCloudCfg(){ CLOUD.grupo=($('cloudGrupo').value||'').trim(); CLOUD.nombre=($('cloudNombre').value||'').trim(); CLOUD.url=($('cloudUrl').value||'').trim(); CLOUD.auto=$('cloudAuto').checked; saveCloudStore(); setCloudStatus(); }
+function cloudReady(){ return !!(CLOUD.url && CLOUD.grupo); }
 function setCloudStatus(msg){ const el=$('cloudStatus'); if(!el)return;
   if(msg){ el.textContent=msg; return; }
-  if(!CLOUD.url||!CLOUD.device){ el.textContent='Sin configurar todavía. Pega la URL y ponle nombre a este dispositivo.'; return; }
-  el.textContent=CLOUD.lastSync?('Conectado · última subida: '+fmtDate(new Date(CLOUD.lastSync).toISOString())):'Conectado · aún sin subir datos.'; }
-function buildCloudPayload(){
+  if(!cloudReady()){ el.textContent='Sin conectar. Escribe el campo, pega la URL y toca "Conectar / Actualizar".'; return; }
+  el.textContent='Campo "'+CLOUD.grupo+'" conectado'+(CLOUD.lastSync?(' · última sinc.: '+fmtDate(new Date(CLOUD.lastSync).toISOString())):'')+'.'; }
+function buildEstado(){ return { productos:DB.productos, movimientos:DB.movimientos, dosis:DB.dosis, insemMovs:DB.insemMovs, centros:DB.centros, cfg:DB.cfg }; }
+function buildVista(){
   const stock=Object.values(DB.productos).map(p=>({nombre:p.nombre,codigo:p.barcode,stock:p.stock,estado:statusOf(p),unidad:p.unidad||'',categoria:p.categoria||''}));
   const movimientos=DB.movimientos.map(m=>({fecha:fmtDate(m.fecha),tipo:m.tipo,producto:m.nombre,cantidad:m.cantidad,centro:m.centro||'',persona:m.persona||'',doc:(m.docTipo||'')+(m.docNum?' '+m.docNum:''),proveedor:m.proveedor||''}));
   const dosis=Object.values(DB.dosis).map(d=>({nombre:d.nombre,stock:d.stock,proveedor:d.proveedor||''}));
   const insem=DB.insemMovs.map(m=>({fecha:fmtDate(m.fecha),tipo:m.tipo,dosis:m.nombre,cantidad:m.cantidad,persona:m.persona||'',proveedor:m.proveedor||'',nota:m.nota||''}));
-  return { dispositivo:CLOUD.device, fecha:new Date().toISOString(), stock, movimientos, dosis, insem };
+  return { fecha:new Date().toISOString(), stock, movimientos, dosis, insem };
 }
-let cloudTimer=null;
-function scheduleCloudSync(){ if(!CLOUD.url||!CLOUD.device||!CLOUD.auto)return; clearTimeout(cloudTimer); cloudTimer=setTimeout(()=>cloudSyncNow(false),2500); }
-async function cloudSyncNow(manual){
-  if(!CLOUD.url){ if(manual)toast('Falta pegar la URL de la nube','warn'); return; }
-  if(!CLOUD.device){ if(manual)toast('Ponle un nombre a este dispositivo','warn'); return; }
-  setCloudStatus('Subiendo a la nube...');
-  try{
-    await fetch(CLOUD.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(buildCloudPayload())});
-    CLOUD.lastSync=Date.now(); saveCloudStore(); setCloudStatus();
-    if(manual)toast('Datos enviados. Revísalos en tu planilla de Google');
-  }catch(e){ setCloudStatus('Error al subir. Revisa la URL o tu conexión.'); if(manual)toast('No se pudo enviar','err'); }
+function scheduleCloudSync(){ if(!cloudReady()||!CLOUD.auto)return; clearTimeout(cloudTimer); cloudTimer=setTimeout(()=>cloudPush(false),2500); }
+function cloudPush(manual){
+  clearTimeout(cloudTimer); cloudTimer=null;
+  if(!cloudReady()){ if(manual)toast('Falta el campo o la URL','warn'); return; }
+  setCloudStatus('Subiendo...');
+  fetch(CLOUD.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({grupo:CLOUD.grupo,dispositivo:CLOUD.nombre,estado:buildEstado(),vista:buildVista()})})
+    .then(()=>{ CLOUD.version=Date.now(); CLOUD.lastSync=Date.now(); saveCloudStore(); setCloudStatus(); if(manual)toast('Datos subidos al campo'); setTimeout(()=>cloudPull(true),1800); })
+    .catch(()=>{ setCloudStatus('Error al subir. Revisa la URL o tu conexión.'); if(manual)toast('No se pudo subir','err'); });
 }
+function cloudPull(silent,cb){
+  if(!cloudReady()){ if(cb)cb(false); return; }
+  if(!silent)setCloudStatus('Actualizando...');
+  const fn='__fc'+Math.floor(Math.random()*1e9); const s=document.createElement('script'); let done=false;
+  const finish=(found)=>{ if(done)return; done=true; try{delete window[fn];}catch(e){} if(s.parentNode)s.parentNode.removeChild(s); if(cb)cb(found); };
+  window[fn]=function(res){
+    try{
+      if(res && res.ok && res.estado){
+        if((res.version||0)>(CLOUD.version||0) && !cloudTimer){ applyCloudState(res.estado,res.version); if(!silent)toast('Datos del campo actualizados'); }
+        else if(!silent){ setCloudStatus(); }
+        finish(true);
+      } else { if(!silent)setCloudStatus(); finish(false); }
+    }catch(e){ finish(false); }
+  };
+  s.onerror=()=>{ if(!silent){ setCloudStatus('No se pudo conectar a la nube.'); toast('No se pudo actualizar','err'); } finish(false); };
+  s.src=CLOUD.url+'?accion=cargar&grupo='+encodeURIComponent(CLOUD.grupo)+'&callback='+fn+'&t='+Date.now();
+  document.body.appendChild(s);
+  setTimeout(()=>finish(false),12000);
+}
+function applyCloudState(estado,version){
+  if(estado.productos)DB.productos=estado.productos; if(estado.movimientos)DB.movimientos=estado.movimientos;
+  if(estado.dosis)DB.dosis=estado.dosis; if(estado.insemMovs)DB.insemMovs=estado.insemMovs;
+  if(estado.centros)DB.centros=estado.centros; if(estado.cfg)DB.cfg=estado.cfg;
+  CLOUD.version=version||Date.now(); CLOUD.lastSync=Date.now(); saveCloudStore(); saveLocalOnly(); setCloudStatus(); refreshAll();
+}
+function cloudConnectManual(){ saveCloudCfg(); if(!cloudReady()){ toast('Completa el campo y la URL','warn'); return; }
+  cloudPull(false,function(found){ if(found===false){ cloudPush(true); toast('Campo creado: se subieron tus datos como base'); } startCloudPoll(); });
+}
+function startCloudPoll(){ if(cloudPoll)clearInterval(cloudPoll); if(!cloudReady())return; cloudPoll=setInterval(()=>cloudPull(true),45000); }
+function refreshAll(){ renderStock(); if(currentView==='insem')renderInsem(); else if(currentView==='resumen')renderResumen(); else if(currentView==='config')renderConfig(); else if(currentView==='ingreso')renderIngreso(); else if(currentView==='salida')renderCentrosChips(); }
 
 /* ============ UTIL ============ */
 const $=id=>document.getElementById(id);
@@ -629,7 +664,8 @@ function fmtDate(iso){ const d=new Date(iso); return d.toLocaleDateString('es-CL
 function beep(){ try{ const c=new (window.AudioContext||window.webkitAudioContext)(); const o=c.createOscillator(),g=c.createGain(); o.connect(g);g.connect(c.destination); o.frequency.value=880; g.gain.value=.15; o.start(); setTimeout(()=>{o.stop();c.close();},120);}catch(e){} if(navigator.vibrate)navigator.vibrate(80); }
 
 /* ============ NAVEGACIÓN ============ */
-function go(v){ document.querySelectorAll('.view').forEach(e=>e.classList.remove('active')); $('view-'+v).classList.add('active'); document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); window.scrollTo(0,0);
+let currentView='stock';
+function go(v){ currentView=v; document.querySelectorAll('.view').forEach(e=>e.classList.remove('active')); $('view-'+v).classList.add('active'); document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); window.scrollTo(0,0);
   if(v==='stock')renderStock(); if(v==='resumen')renderResumen(); if(v==='config')renderConfig(); if(v==='salida')renderCentrosChips(); if(v==='ingreso')renderIngreso(); if(v==='insem')renderInsem(); }
 
 /* ============ STOCK ============ */
@@ -801,7 +837,7 @@ function renderResumen(){
 }
 
 /* ============ CONFIG ============ */
-function renderConfig(){ $('cfgBajo').value=DB.cfg.bajo; $('cfgCrit').value=DB.cfg.critico; $('cloudDevice').value=CLOUD.device||''; $('cloudUrl').value=CLOUD.url||''; $('cloudAuto').checked=CLOUD.auto!==false; setCloudStatus(); renderCentrosCfg(); renderProdsCfg(); }
+function renderConfig(){ $('cfgBajo').value=DB.cfg.bajo; $('cfgCrit').value=DB.cfg.critico; $('cloudGrupo').value=CLOUD.grupo||''; $('cloudNombre').value=CLOUD.nombre||''; $('cloudUrl').value=CLOUD.url||''; $('cloudAuto').checked=CLOUD.auto!==false; setCloudStatus(); renderCentrosCfg(); renderProdsCfg(); }
 function saveCfg(){ DB.cfg.bajo=+$('cfgBajo').value||0; DB.cfg.critico=+$('cfgCrit').value||0; save(); toast('Alertas actualizadas'); }
 function renderCentrosCfg(){ $('cfgCentros').innerHTML=DB.centros.map((c,i)=>'<div class="row-item"><div class="ri-name">'+esc(c)+'</div><button class="del" onclick="delCentro('+i+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>').join(''); }
 function addCentro(){ const v=($('newCentro').value||'').trim(); if(!v)return; if(DB.centros.includes(v)){toast('Ya existe','warn');return;} DB.centros.push(v); $('newCentro').value=''; save(); renderCentrosCfg(); toast('Centro agregado'); }
@@ -895,6 +931,7 @@ function closeModal(id){ $(id).classList.remove('on'); }
 
 /* ============ INICIO ============ */
 load(); loadCloud(); renderStock(); renderCentrosChips(); renderIngreso();
+if(cloudReady()){ cloudPull(true); startCloudPoll(); }
 </script>
 </body>
 </html>
