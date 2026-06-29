@@ -622,38 +622,51 @@ function cloudPush(manual){
   if(!cloudReady()){ if(manual)toast('Falta el campo o la URL','warn'); return; }
   setCloudStatus('Subiendo...');
   fetch(CLOUD.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({grupo:CLOUD.grupo,dispositivo:CLOUD.nombre,estado:buildEstado(),vista:buildVista()})})
-    .then(()=>{ CLOUD.version=Date.now(); CLOUD.lastSync=Date.now(); saveCloudStore(); setCloudStatus(); if(manual)toast('Datos subidos al campo'); setTimeout(()=>cloudPull(true),1800); })
+    .then(()=>{ CLOUD.version=Date.now(); CLOUD.lastSync=Date.now(); saveCloudStore(); setCloudStatus(); if(manual)toast('Datos subidos al campo'); })
     .catch(()=>{ setCloudStatus('Error al subir. Revisa la URL o tu conexión.'); if(manual)toast('No se pudo subir','err'); });
 }
-function cloudPull(silent,cb){
-  if(!cloudReady()){ if(cb)cb(false); return; }
-  if(!silent)setCloudStatus('Actualizando...');
+function cloudFetch(cb){
+  if(!cloudReady()){ cb(null); return; }
   const fn='__fc'+Math.floor(Math.random()*1e9); const s=document.createElement('script'); let done=false;
-  const finish=(found)=>{ if(done)return; done=true; try{delete window[fn];}catch(e){} if(s.parentNode)s.parentNode.removeChild(s); if(cb)cb(found); };
-  window[fn]=function(res){
-    try{
-      if(res && res.ok && res.estado){
-        if((res.version||0)>(CLOUD.version||0) && !cloudTimer){ applyCloudState(res.estado,res.version); if(!silent)toast('Datos del campo actualizados'); }
-        else if(!silent){ setCloudStatus(); }
-        finish(true);
-      } else { if(!silent)setCloudStatus(); finish(false); }
-    }catch(e){ finish(false); }
-  };
-  s.onerror=()=>{ if(!silent){ setCloudStatus('No se pudo conectar a la nube.'); toast('No se pudo actualizar','err'); } finish(false); };
+  const finish=(res)=>{ if(done)return; done=true; try{delete window[fn];}catch(e){} if(s.parentNode)s.parentNode.removeChild(s); cb(res); };
+  window[fn]=function(res){ finish(res||null); };
+  s.onerror=()=>finish(null);
   s.src=CLOUD.url+'?accion=cargar&grupo='+encodeURIComponent(CLOUD.grupo)+'&callback='+fn+'&t='+Date.now();
   document.body.appendChild(s);
-  setTimeout(()=>finish(false),12000);
+  setTimeout(()=>finish(null),12000);
+}
+function estadoTieneDatos(est){ return !!(est && (Object.keys(est.productos||{}).length>0 || (est.movimientos||[]).length>0 || Object.keys(est.dosis||{}).length>0)); }
+function localHasData(){ return Object.keys(DB.productos).length>0 || DB.movimientos.length>0 || Object.keys(DB.dosis).length>0; }
+function cloudPullSilent(){
+  if(!cloudReady())return;
+  cloudFetch(function(res){
+    if(res && res.ok && res.estado && (res.version||0)>(CLOUD.version||0) && !cloudTimer){ applyCloudState(res.estado,res.version); }
+  });
 }
 function applyCloudState(estado,version){
+  // Seguridad: una nube vacía NUNCA borra un teléfono que sí tiene datos
+  if(!estadoTieneDatos(estado) && localHasData()){ CLOUD.version=version||Date.now(); saveCloudStore(); return; }
   if(estado.productos)DB.productos=estado.productos; if(estado.movimientos)DB.movimientos=estado.movimientos;
   if(estado.dosis)DB.dosis=estado.dosis; if(estado.insemMovs)DB.insemMovs=estado.insemMovs;
   if(estado.centros)DB.centros=estado.centros; if(estado.cfg)DB.cfg=estado.cfg;
   CLOUD.version=version||Date.now(); CLOUD.lastSync=Date.now(); saveCloudStore(); saveLocalOnly(); setCloudStatus(); refreshAll();
 }
-function cloudConnectManual(){ saveCloudCfg(); if(!cloudReady()){ toast('Completa el campo y la URL','warn'); return; }
-  cloudPull(false,function(found){ if(found===false){ cloudPush(true); toast('Campo creado: se subieron tus datos como base'); } startCloudPoll(); });
+function cloudConnectManual(){
+  saveCloudCfg();
+  if(!cloudReady()){ toast('Completa el campo y la URL','warn'); return; }
+  setCloudStatus('Conectando...');
+  cloudFetch(function(res){
+    if(!res || !res.ok){ setCloudStatus('No se pudo conectar. Revisa la URL o tu Internet.'); toast('No se pudo conectar','err'); return; }
+    const hayNube=estadoTieneDatos(res.estado);
+    if(!hayNube){ cloudPush(true); toast('Campo creado: se subieron tus datos como base'); startCloudPoll(); return; }
+    if(!localHasData()){ applyCloudState(res.estado,res.version); toast('Datos del campo cargados'); startCloudPoll(); return; }
+    const usarNube=confirm('El campo "'+CLOUD.grupo+'" YA tiene datos en la nube, y este teléfono también tiene datos.\n\n• ACEPTAR = usar lo de la NUBE (reemplaza lo de este teléfono)\n• CANCELAR = subir lo de ESTE TELÉFONO (reemplaza lo de la nube)\n\nSugerencia: si dudas, primero descarga un respaldo en Config.');
+    if(usarNube){ applyCloudState(res.estado,res.version); toast('Se cargaron los datos de la nube'); }
+    else { cloudPush(true); toast('Se subieron los datos de este teléfono'); }
+    startCloudPoll();
+  });
 }
-function startCloudPoll(){ if(cloudPoll)clearInterval(cloudPoll); if(!cloudReady())return; cloudPoll=setInterval(()=>cloudPull(true),45000); }
+function startCloudPoll(){ if(cloudPoll)clearInterval(cloudPoll); if(!cloudReady())return; cloudPoll=setInterval(cloudPullSilent,45000); }
 function refreshAll(){ renderStock(); if(currentView==='insem')renderInsem(); else if(currentView==='resumen')renderResumen(); else if(currentView==='config')renderConfig(); else if(currentView==='ingreso')renderIngreso(); else if(currentView==='salida')renderCentrosChips(); }
 
 /* ============ UTIL ============ */
@@ -931,7 +944,7 @@ function closeModal(id){ $(id).classList.remove('on'); }
 
 /* ============ INICIO ============ */
 load(); loadCloud(); renderStock(); renderCentrosChips(); renderIngreso();
-if(cloudReady()){ cloudPull(true); startCloudPoll(); }
+if(cloudReady()){ cloudPullSilent(); startCloudPoll(); }
 </script>
 </body>
 </html>
