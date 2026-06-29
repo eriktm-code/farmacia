@@ -635,6 +635,34 @@ function cloudFetch(cb){
   document.body.appendChild(s);
   setTimeout(()=>finish(null),12000);
 }
+/* ---- FOTOS: subir a Drive y borrar del telefono SOLO al confirmar ---- */
+function docsPendientes(){ return Object.values(DB.documentos||{}).filter(function(d){ return d && d.foto && !d.fotoSubida; }); }
+function subirFotosPendientes(){
+  if(!cloudReady()) return;            // sin URL/campo: la foto se queda en el telefono (seguro)
+  docsPendientes().forEach(function(d){ subirUnaFoto(d); });
+}
+function subirUnaFoto(d){
+  if(!d || !d.foto || d.fotoSubida) return;
+  try{
+    var payload=JSON.stringify({accion:'foto',grupo:CLOUD.grupo,docId:d.id,tipo:d.tipo,num:d.num,proveedor:d.proveedor,fecha:fmtDate(d.fecha),foto:d.foto});
+    fetch(CLOUD.url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:payload});
+  }catch(e){ return; }
+  setTimeout(function(){ confirmarFoto(d.id,0); }, 3500);  // dale unos segundos al motor
+}
+function confirmarFoto(docId,intento){
+  if(intento>4) return;                 // hasta 5 intentos; si no, queda pendiente y reintenta al reabrir la app
+  var fn='__vf'+Math.floor(Math.random()*1e9); var s=document.createElement('script'); var done=false;
+  var finish=function(res){ if(done)return; done=true; try{delete window[fn];}catch(e){} if(s.parentNode)s.parentNode.removeChild(s);
+    if(res && res.ok && res.existe){
+      var d=DB.documentos[docId]; if(d){ d.foto=null; d.fotoSubida=true; d.link=res.link||''; saveLocalOnly(); }
+    } else { setTimeout(function(){ confirmarFoto(docId,intento+1); }, 4000); }
+  };
+  window[fn]=function(res){ finish(res||null); };
+  s.onerror=function(){ finish(null); };
+  s.src=CLOUD.url+'?accion=verdoc&grupo='+encodeURIComponent(CLOUD.grupo)+'&doc='+encodeURIComponent(docId)+'&callback='+fn+'&t='+Date.now();
+  document.body.appendChild(s);
+  setTimeout(function(){ finish(null); }, 12000);
+}
 function estadoTieneDatos(est){ return !!(est && (Object.keys(est.productos||{}).length>0 || (est.movimientos||[]).length>0 || Object.keys(est.dosis||{}).length>0)); }
 function localHasData(){ return Object.keys(DB.productos).length>0 || DB.movimientos.length>0 || Object.keys(DB.dosis).length>0; }
 function cloudPullSilent(){
@@ -780,11 +808,12 @@ function saveIngreso(){
   if(!entries.length){ toast('Escanea al menos un producto','warn'); return; }
   if(!ingPhotoData){ toast('Falta la foto del documento','warn'); return; }
   const docId='D'+Date.now(); const docTipo=$('ingDocTipo').value, docNum=($('ingDocNum').value||'').trim(), prov=($('ingProv').value||'').trim();
-  DB.documentos[docId]={ id:docId, tipo:docTipo, num:docNum, proveedor:prov, foto:ingPhotoData, fecha:new Date().toISOString() };
+  DB.documentos[docId]={ id:docId, tipo:docTipo, num:docNum, proveedor:prov, foto:ingPhotoData, fecha:new Date().toISOString(), fotoSubida:false, link:'' };
   let prod=0,uni=0;
   entries.forEach(([bc,qty],i)=>{ const p=DB.productos[bc]; if(!p)return; p.stock+=qty; prod++; uni+=qty;
     DB.movimientos.push({ id:Date.now()+i, tipo:'ingreso', barcode:bc, nombre:p.nombre, unidad:p.unidad, cantidad:qty, fecha:new Date().toISOString(), docId:docId, docTipo:docTipo, docNum:docNum, proveedor:prov }); });
   save(); toast('Ingreso guardado: '+prod+' productos, '+uni+' unidades');
+  subirFotosPendientes();
   ingCart={}; ingPhotoData=null; $('ingDocNum').value=''; $('ingProv').value=''; $('ingPhoto').value='';
   go('stock');
 }
@@ -944,7 +973,7 @@ function closeModal(id){ $(id).classList.remove('on'); }
 
 /* ============ INICIO ============ */
 load(); loadCloud(); renderStock(); renderCentrosChips(); renderIngreso();
-if(cloudReady()){ cloudPullSilent(); startCloudPoll(); }
+if(cloudReady()){ cloudPullSilent(); startCloudPoll(); subirFotosPendientes(); }
 </script>
 </body>
 </html>
