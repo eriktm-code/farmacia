@@ -362,34 +362,28 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
 
   <button class="scan-cta" onclick="startScan('salida')" style="background:linear-gradient(150deg,var(--steel),#2b3940);">
     <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M11 8v8M15 8v8M19 8v8" stroke-width="1.6"/></svg></div>
-    <div class="txt"><b>Escanear código</b><small>Apunta la cámara al código de barra</small></div>
+    <div class="txt"><b>Escanear producto</b><small>Cada escaneo se suma al listado de abajo</small></div>
   </button>
 
-  <div id="salForm" style="display:none;">
-    <div class="scanned" id="salScanned"></div>
+  <div id="salForm">
+    <div class="btn-row" style="margin-bottom:14px;">
+      <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="openPicker()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg> Buscar por nombre
+      </button>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <h3 style="font-size:1.25rem;color:var(--green-900);">Productos a retirar</h3>
+      <span class="num" id="salCartCount" style="color:var(--muted);font-weight:600;font-size:.95rem;"></span>
+    </div>
+    <div class="cart" id="salCartList"></div>
 
     <div class="fcard">
-      <div class="field" id="salModoWrap" style="display:none;">
-        <label>¿Cómo sale?</label>
-        <div class="chips">
-          <button type="button" class="chip sel" id="salModoFrasco" onclick="setSalUnit('frasco')">Por frasco entero</button>
-          <button type="button" class="chip" id="salModoMl" onclick="setSalUnit('ml')">Por mL (inyección)</button>
-        </div>
-        <small id="salAbiertoInfo" style="color:var(--muted);display:block;margin-top:6px"></small>
-      </div>
-      <div class="field">
-        <label id="salQtyLabel">Cantidad que sale</label>
-        <div class="qty-row">
-          <button class="stepper" onclick="stepQty('sal',-1)">−</button>
-          <input type="number" id="salQty" inputmode="numeric" min="1" value="1">
-          <button class="stepper" onclick="stepQty('sal',1)">+</button>
-        </div>
-      </div>
       <div class="field">
         <label>Centro de costo</label>
         <div class="chips" id="salCentros"></div>
       </div>
-      <div class="field">
+      <div class="field" style="margin-bottom:0;">
         <label>Persona que retira</label>
         <input type="text" id="salPersona" list="personasList" placeholder="Nombre de quien retira">
         <datalist id="personasList"></datalist>
@@ -398,7 +392,7 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
 
     <button class="btn btn-red" id="salSave" onclick="saveSalida()">
       <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-      Registrar salida
+      <span id="salSaveLabel">Registrar salida</span>
     </button>
   </div>
 </section>
@@ -612,6 +606,31 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
   </div>
 </div>
 
+<!-- ===================== BUSCAR / ELEGIR PRODUCTO ===================== -->
+<div class="modal" id="modalPicker">
+  <div class="sheet">
+    <div class="sheet-h"><h2 id="pickerTitle">Elegir producto</h2><button class="x" onclick="closeModal('modalPicker')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <p class="note" id="pickerNote" style="display:none;margin-bottom:12px;"></p>
+    <div class="search" style="margin-bottom:12px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+      <input type="search" id="pickerSearch" placeholder="Buscar medicamento..." oninput="renderPicker()">
+    </div>
+    <div class="plist" id="pickerList" style="max-height:50vh;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<!-- ===================== CONFIRMAR SALIDA ===================== -->
+<div class="modal" id="modalConfirmSal">
+  <div class="sheet">
+    <div class="sheet-h"><h2>¿Confirmar salida?</h2><button class="x" onclick="closeModal('modalConfirmSal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="fcard" id="confSalBody"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeModal('modalConfirmSal')">No, revisar</button>
+      <button class="btn btn-red" style="flex:1;" onclick="doSaveSalida()">Sí, registrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== CONFIRMAR INGRESO ===================== -->
 <div class="modal" id="modalConfirmIng">
   <div class="sheet">
@@ -644,9 +663,9 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
 /* ============ ESTADO / ALMACENAMIENTO ============ */
 const KEY='farmacia_la_aguada_v1';
 const DEFAULT_CENTROS=['Lechería Boumatic','Lechería Jersey','Lechería Robótica','Crianza','Por Distribuir'];
-let DB={ productos:{}, movimientos:[], documentos:{}, dosis:{}, insemMovs:[], centros:[...DEFAULT_CENTROS], personas:[], usuarios:{}, cfg:{bajo:5,critico:2} };
+let DB={ productos:{}, movimientos:[], documentos:{}, dosis:{}, insemMovs:[], centros:[...DEFAULT_CENTROS], personas:[], usuarios:{}, aliases:{}, cfg:{bajo:5,critico:2} };
 
-function load(){ try{ const r=localStorage.getItem(KEY); if(r){ DB=Object.assign(DB,JSON.parse(r)); } }catch(e){} if(!DB.documentos)DB.documentos={}; if(!DB.dosis)DB.dosis={}; if(!DB.insemMovs)DB.insemMovs=[]; if(!DB.usuarios)DB.usuarios={}; }
+function load(){ try{ const r=localStorage.getItem(KEY); if(r){ DB=Object.assign(DB,JSON.parse(r)); } }catch(e){} if(!DB.documentos)DB.documentos={}; if(!DB.dosis)DB.dosis={}; if(!DB.insemMovs)DB.insemMovs=[]; if(!DB.usuarios)DB.usuarios={}; if(!DB.aliases)DB.aliases={}; }
 function save(){ saveLocalOnly(); scheduleCloudSync(); }
 function saveLocalOnly(){ try{ localStorage.setItem(KEY,JSON.stringify(DB)); }catch(e){ toast('No se pudo guardar (memoria llena)','err'); } }
 
@@ -662,7 +681,7 @@ function setCloudStatus(msg){ const el=$('cloudStatus'); if(!el)return;
   if(msg){ el.textContent=msg; return; }
   if(!cloudReady()){ el.textContent='Sin conectar. Escribe el campo, pega la URL y toca "Conectar / Actualizar".'; return; }
   el.textContent='Campo "'+CLOUD.grupo+'" conectado'+(CLOUD.lastSync?(' · última sinc.: '+fmtDate(new Date(CLOUD.lastSync).toISOString())):'')+'.'; }
-function buildEstado(){ return { productos:DB.productos, movimientos:DB.movimientos, dosis:DB.dosis, insemMovs:DB.insemMovs, centros:DB.centros, usuarios:DB.usuarios, cfg:DB.cfg }; }
+function buildEstado(){ return { productos:DB.productos, movimientos:DB.movimientos, dosis:DB.dosis, insemMovs:DB.insemMovs, centros:DB.centros, usuarios:DB.usuarios, aliases:DB.aliases, cfg:DB.cfg }; }
 function buildVista(){
   const stock=Object.values(DB.productos).map(p=>({nombre:p.nombre,codigo:p.barcode,stock:p.stock,estado:statusOf(p),unidad:p.unidad||'',categoria:p.categoria||''}));
   const movimientos=DB.movimientos.map(m=>({fecha:fmtDate(m.fecha),tipo:m.tipo,producto:m.nombre,cantidad:m.cantidad,centro:m.centro||'',persona:m.persona||'',doc:(m.docTipo||'')+(m.docNum?' '+m.docNum:''),proveedor:m.proveedor||''}));
@@ -720,9 +739,13 @@ function cloudPull(silent,cb){
   setTimeout(()=>finish(false),12000);
 }
 function applyCloudState(estado,version){
+  // Seguridad: una nube vacía NUNCA borra un teléfono que sí tiene datos
+  const cloudVacio=!estado||(Object.keys(estado.productos||{}).length===0 && (estado.movimientos||[]).length===0 && Object.keys(estado.dosis||{}).length===0);
+  const localTiene=Object.keys(DB.productos).length>0||DB.movimientos.length>0||Object.keys(DB.dosis).length>0;
+  if(cloudVacio && localTiene){ CLOUD.version=version||Date.now(); saveCloudStore(); return; }
   if(estado.productos)DB.productos=estado.productos; if(estado.movimientos)DB.movimientos=estado.movimientos;
   if(estado.dosis)DB.dosis=estado.dosis; if(estado.insemMovs)DB.insemMovs=estado.insemMovs;
-  if(estado.centros)DB.centros=estado.centros; if(estado.usuarios)DB.usuarios=estado.usuarios; if(estado.cfg)DB.cfg=estado.cfg;
+  if(estado.centros)DB.centros=estado.centros; if(estado.usuarios)DB.usuarios=estado.usuarios; if(estado.aliases)DB.aliases=estado.aliases; if(estado.cfg)DB.cfg=estado.cfg;
   CLOUD.version=version||Date.now(); CLOUD.lastSync=Date.now(); saveCloudStore(); saveLocalOnly(); setCloudStatus(); refreshAll(); requireLock();
 }
 function cloudConnectManual(){ saveCloudCfg(); if(!cloudReady()){ toast('Completa el campo y la URL','warn'); return; }
@@ -795,7 +818,7 @@ function delUsuario(id){
 function go(v){
   if(v==='config' && !isAdmin()){ toast('Solo administradores pueden entrar a Config','warn'); return; }
   currentView=v; document.querySelectorAll('.view').forEach(e=>e.classList.remove('active')); $('view-'+v).classList.add('active'); document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); window.scrollTo(0,0);
-  if(v==='stock')renderStock(); if(v==='resumen')renderResumen(); if(v==='config')renderConfig(); if(v==='salida')renderCentrosChips(); if(v==='ingreso')renderIngreso(); if(v==='insem')renderInsem(); }
+  if(v==='stock')renderStock(); if(v==='resumen')renderResumen(); if(v==='config')renderConfig(); if(v==='salida'){ if(cloudReady())cloudPull(true); renderSalida(); } if(v==='ingreso')renderIngreso(); if(v==='insem')renderInsem(); }
 
 /* ============ STOCK ============ */
 function renderStock(){
@@ -851,12 +874,13 @@ function manualEntry(){ stopScan(); $('manualCode').value=''; openModal('modalMa
 function submitManual(){ const c=($('manualCode').value||'').trim(); if(!c){ toast('Escribe un código','warn'); return; } closeModal('modalManual'); onScanned(c); }
 
 function onScanned(code){
-  const p=DB.productos[code];
   if(scanCtx==='ingreso'){
+    const p=DB.productos[code];
     if(p){ addToCart(code); } else { pendingBarcode=code; $('newBarcode').textContent='Código: '+code; $('newName').value=''; $('newBajo').value=DB.cfg.bajo; $('newCrit').value=DB.cfg.critico; openModal('modalNew'); setTimeout(()=>$('newName').focus(),200); }
   } else { // salida
-    if(!p){ toast('Ese código no está registrado. Primero ingrésalo en bodega.','warn'); go('ingreso'); return; }
-    prepSalida(p);
+    const p=findProducto(code);
+    if(p){ addToSalCart(p.barcode); }
+    else { openPickerForCode(code); }
   }
 }
 
@@ -922,71 +946,102 @@ function doSaveIngreso(){
 }
 
 /* ============ SALIDA ============ */
-let curSalida=null, salCentro=null, salUnit='frasco';
-function prepSalida(p){ curSalida=p; salCentro=null; salUnit='frasco'; go('salida');
-  $('salForm').style.display='block';
-  $('salScanned').className='scanned'; $('salScanned').innerHTML=scannedHTML(p);
-  $('salQty').value=1; $('salPersona').value=(currentUser()?currentUser().nombre:''); renderCentrosChips(); refreshPersonas();
-  // El selector frasco/mL solo aparece si el producto tiene contenido definido
-  const fraccionable=+p.contenido>0;
-  $('salModoWrap').style.display=fraccionable?'block':'none';
-  if(fraccionable){ setSalUnit('frasco'); } else { salUnit='frasco'; $('salQtyLabel').textContent='Cantidad que sale'; }
+let salCentro=null, salCart={};
+
+/* Búsqueda tolerante: código exacto, alias, o normalizado (sin ceros a la izquierda) */
+function findProducto(code){
+  code=String(code||'').trim();
+  if(DB.productos[code]) return DB.productos[code];
+  if(DB.aliases[code] && DB.productos[DB.aliases[code]]) return DB.productos[DB.aliases[code]];
+  const norm=code.replace(/^0+/,'');
+  for(const bc in DB.productos){ if(bc.trim()===code) return DB.productos[bc]; if(bc.replace(/^0+/,'')===norm && norm!=='') return DB.productos[bc]; }
+  return null;
 }
-function setSalUnit(mode){ salUnit=mode; const p=curSalida; if(!p)return;
-  $('salModoFrasco').classList.toggle('sel',mode==='frasco');
-  $('salModoMl').classList.toggle('sel',mode==='ml');
-  const abierto=+p.abierto||0, cont=+p.contenido||0;
-  if(mode==='ml'){
-    $('salQtyLabel').textContent='Mililitros que salen (mL)';
-    $('salQty').value=cont?Math.min(20,cont):20; // arranque cómodo para una dosis
-    $('salAbiertoInfo').textContent='Frasco abierto: '+abierto+' mL disponibles · '+p.stock+' frasco(s) sellado(s) de '+cont+' mL.';
-  } else {
-    $('salQtyLabel').textContent='Frascos que salen';
-    $('salQty').value=1;
-    $('salAbiertoInfo').textContent=abierto>0?('Hay un frasco abierto con '+abierto+' mL; sale un frasco sellado.'):'';
-  }
-}
-function renderCentrosChips(){ const c=$('salCentros'); if(!c)return; c.innerHTML=DB.centros.map(x=>'<button class="chip'+(salCentro===x?' sel':'')+'" onclick="pickCentro(this,\''+esc(x).replace(/'/g,"\\'")+'\')">'+esc(x)+'</button>').join(''); }
+
+function renderCentrosChips(){ const c=$('salCentros'); if(!c)return; c.innerHTML=DB.centros.map(x=>'<button type="button" class="chip'+(salCentro===x?' sel':'')+'" onclick="pickCentro(this,\''+esc(x).replace(/'/g,"\\'")+'\')">'+esc(x)+'</button>').join(''); }
 function pickCentro(el,x){ salCentro=x; document.querySelectorAll('#salCentros .chip').forEach(b=>b.classList.remove('sel')); el.classList.add('sel'); }
 function refreshPersonas(){ $('personasList').innerHTML=DB.personas.map(p=>'<option value="'+esc(p)+'">').join(''); }
 
+function renderSalida(){
+  renderCentrosChips(); refreshPersonas();
+  if($('salPersona') && !$('salPersona').value) $('salPersona').value=(currentUser()?currentUser().nombre:'');
+  const entries=Object.entries(salCart);
+  $('salCartCount').textContent=entries.length?(entries.length+(entries.length===1?' producto':' productos')):'';
+  const list=$('salCartList');
+  if(!entries.length){ list.innerHTML='<div class="cart-empty">Escanea o busca los productos que retira la persona.<br>Se suman aquí y registras todo junto.</div>'; }
+  else {
+    list.innerHTML=entries.map(([bc,ln])=>{
+      const p=DB.productos[bc]; if(!p)return '';
+      const frasco=+p.contenido>0;
+      let toggle='';
+      if(frasco){
+        toggle='<div class="chips" style="margin:6px 0 2px;"><button type="button" class="chip'+(ln.modo!=='ml'?' sel':'')+'" style="padding:6px 12px;font-size:.82rem;" onclick="salLineModo(\''+bc+'\',\'frasco\')">Frasco</button><button type="button" class="chip'+(ln.modo==='ml'?' sel':'')+'" style="padding:6px 12px;font-size:.82rem;" onclick="salLineModo(\''+bc+'\',\'ml\')">mL</button></div>';
+      }
+      const unidad=ln.modo==='ml'?'mL':(p.unidad||'u');
+      return '<div class="cart-line" style="flex-wrap:wrap;"><div class="cl-name" style="flex:1 1 100%;"><b>'+esc(p.nombre)+'</b><small>en bodega: '+p.stock+' '+esc(p.unidad||'u')+(frasco&&+p.abierto>0?(' · '+(+p.abierto)+' mL abiertos'):'')+'</small></div>'+toggle+
+        '<div class="mini-step" style="margin-top:4px;"><button onclick="salLineStep(\''+bc+'\',-1)">−</button><span class="q">'+ln.cantidad+'</span><button onclick="salLineStep(\''+bc+'\',1)">+</button><span style="font-size:.8rem;color:var(--muted);margin-left:2px;">'+unidad+'</span></div>'+
+        '<button class="rm-line" style="margin-left:auto;margin-top:4px;" onclick="salLineRemove(\''+bc+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>';
+    }).join('');
+  }
+  $('salSaveLabel').textContent=entries.length?('Registrar salida ('+entries.length+')'):'Registrar salida';
+}
+function addToSalCart(bc){
+  const p=DB.productos[bc]; if(!p)return;
+  if(salCart[bc]){ salLineStep(bc,1); }
+  else { salCart[bc]={ modo:(+p.contenido>0?'frasco':'unidad'), cantidad:1 }; }
+  go('salida'); renderSalida(); toast('Agregado: '+p.nombre);
+}
+function salLineModo(bc,modo){ if(!salCart[bc])return; salCart[bc].modo=modo; salCart[bc].cantidad=(modo==='ml'?(+DB.productos[bc].contenido||20):1); renderSalida(); }
+function salLineStep(bc,d){ if(!salCart[bc])return; const step=(salCart[bc].modo==='ml')?( d>0?5:-5 ):d; let v=salCart[bc].cantidad+step; if(v<1)v=1; salCart[bc].cantidad=v; renderSalida(); }
+function salLineRemove(bc){ delete salCart[bc]; renderSalida(); }
+
+/* Buscador manual de productos (por nombre) */
+let pickerMode='cart'; let pickerPendingCode=null;
+function openPicker(){ pickerMode='cart'; pickerPendingCode=null; $('pickerTitle').textContent='Buscar producto'; $('pickerNote').style.display='none'; $('pickerSearch').value=''; renderPicker(); openModal('modalPicker'); setTimeout(()=>$('pickerSearch').focus(),200); }
+function openPickerForCode(code){ pickerMode='alias'; pickerPendingCode=code; $('pickerTitle').textContent='Código no reconocido'; const n=$('pickerNote'); n.style.display='block'; n.innerHTML='El código <b>'+esc(code)+'</b> no coincide con ningún producto. Elígelo de la lista y lo dejaré vinculado para la próxima.'; $('pickerSearch').value=''; renderPicker(); openModal('modalPicker'); setTimeout(()=>$('pickerSearch').focus(),200); }
+function renderPicker(){
+  const q=($('pickerSearch').value||'').toLowerCase().trim();
+  const arr=Object.values(DB.productos).filter(p=>!q||p.nombre.toLowerCase().includes(q)||(p.barcode||'').includes(q)).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  const list=$('pickerList');
+  if(!arr.length){ list.innerHTML='<div class="cart-empty">Sin resultados. Revisa el nombre o registra el producto en Ingreso.</div>'; return; }
+  list.innerHTML=arr.map(p=>{ const s=statusOf(p); return '<div class="pcard s-'+s+'" onclick="pickProduct(\''+p.barcode+'\')"><div class="info"><b>'+esc(p.nombre)+'</b><small>'+esc(p.categoria||'')+' · cód '+p.barcode+'</small></div><div class="qty"><div class="n">'+p.stock+'</div><div class="u">'+esc(p.unidad||'u')+'</div></div></div>'; }).join('');
+}
+function pickProduct(bc){
+  if(pickerMode==='alias' && pickerPendingCode){ DB.aliases[pickerPendingCode]=bc; save(); toast('Código vinculado a '+DB.productos[bc].nombre); }
+  closeModal('modalPicker'); addToSalCart(bc);
+}
+
 function saveSalida(){
-  if(!curSalida)return; const qty=+$('salQty').value||0; if(qty<1){ toast('Cantidad inválida','warn'); return; }
+  const entries=Object.entries(salCart);
+  if(!entries.length){ toast('Agrega al menos un producto','warn'); return; }
   if(!salCentro){ toast('Elige un centro de costo','warn'); return; }
   const persona=($('salPersona').value||'').trim(); if(!persona){ toast('Indica quién retira','warn'); return; }
-  const p=DB.productos[curSalida.barcode];
-  const cont=+p.contenido||0;
-  let unidadMov=p.unidad; // lo que quedará registrado en el historial
-
-  if(salUnit==='ml' && cont>0){
-    // ----- SALIDA POR mL (abre frascos sellados a medida que se necesita) -----
-    p.abierto=+p.abierto||0;
-    let need=qty;
-    // abrir frascos sellados hasta cubrir lo pedido
-    while(need>p.abierto && p.stock>0){ p.stock-=1; p.abierto+=cont; }
-    if(need>p.abierto){
-      if(!confirm('Solo hay '+p.abierto+' mL disponibles (frasco abierto + sellados) y quieres sacar '+need+' mL. El disponible quedará en negativo. ¿Continuar?')) return;
+  const lineas=entries.map(([bc,ln])=>{ const p=DB.productos[bc]; const u=ln.modo==='ml'?'mL':(p.unidad||'u'); const falta=(ln.modo==='ml')?false:(ln.cantidad>p.stock); return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(p.nombre)+(falta?' <span class="danger-txt">(sobre stock)</span>':'')+'</span><b class="num" style="flex:none;">−'+ln.cantidad+' '+u+'</b></div>'; }).join('');
+  $('confSalBody').innerHTML='<div class="note" style="margin-bottom:12px;">'+esc(salCentro)+' · Retira: '+esc(persona)+'</div>'+lineas;
+  openModal('modalConfirmSal');
+}
+function doSaveSalida(){
+  closeModal('modalConfirmSal');
+  const entries=Object.entries(salCart);
+  const persona=($('salPersona').value||'').trim();
+  let avisos=[];
+  entries.forEach(([bc,ln])=>{
+    const p=DB.productos[bc]; if(!p)return; const cont=+p.contenido||0; let unidadMov=p.unidad;
+    if(ln.modo==='ml' && cont>0){
+      p.abierto=+p.abierto||0; let need=ln.cantidad;
+      while(need>p.abierto && p.stock>0){ p.stock-=1; p.abierto+=cont; }
+      p.abierto-=need; if(p.abierto<0.0001 && p.abierto>-0.0001)p.abierto=0;
+      unidadMov='mL';
+    } else {
+      p.stock-=ln.cantidad;
     }
-    p.abierto-=need;
-    // si el frasco abierto quedó justo en 0, no hay abierto pendiente
-    if(p.abierto<0.0001 && p.abierto>-0.0001) p.abierto=0;
-    unidadMov='mL';
-  } else {
-    // ----- SALIDA POR FRASCO/UNIDAD (comportamiento original) -----
-    if(qty>p.stock){ if(!confirm('Solo hay '+p.stock+' en bodega y quieres sacar '+qty+'. ¿El stock quedará en negativo. Continuar?')) return; }
-    p.stock-=qty;
-  }
-
-  if(!DB.personas.includes(persona))DB.personas.push(persona);
-  DB.movimientos.push({ id:Date.now(), tipo:'salida', barcode:p.barcode, nombre:p.nombre, unidad:unidadMov, cantidad:qty, fecha:new Date().toISOString(), centro:salCentro, persona:persona });
+    DB.movimientos.push({ id:Date.now()+Math.floor(Math.random()*1000), tipo:'salida', barcode:p.barcode, nombre:p.nombre, unidad:unidadMov, cantidad:ln.cantidad, fecha:new Date().toISOString(), centro:salCentro, persona:persona });
+    const s=statusOf(p); if(s==='zero')avisos.push(p.nombre+' AGOTADO'); else if(s==='crit')avisos.push(p.nombre+' crítico'); 
+  });
+  if(persona && !DB.personas.includes(persona))DB.personas.push(persona);
   save();
-  const s=statusOf(p);
-  const detalle=qty+' '+(unidadMov==='mL'?'mL':(p.unidad||'u'));
-  if(s==='zero')toast('Salida ok (−'+detalle+'). ¡'+p.nombre+' quedó AGOTADO!','err');
-  else if(s==='crit')toast('Salida ok (−'+detalle+'). '+p.nombre+' en stock CRÍTICO ('+p.stock+')','err');
-  else if(s==='bajo')toast('Salida ok (−'+detalle+'). '+p.nombre+' en stock bajo ('+p.stock+')','warn');
-  else toast('Salida registrada: −'+detalle+' '+p.nombre);
-  curSalida=null; salUnit='frasco'; $('salForm').style.display='none'; go('stock');
+  toast('Salida registrada'+(avisos.length?' · ⚠ '+avisos.join(', '):''), avisos.length?'warn':undefined);
+  salCart={}; salCentro=null; go('stock');
 }
 
 /* ============ RESUMEN ============ */
@@ -1119,6 +1174,8 @@ function closeModal(id){ $(id).classList.remove('on'); }
 function updateBrandSub(){ $('brandSub').textContent=CLOUD.grupo?CLOUD.grupo:'Stock Veterinario'; }
 load(); loadCloud(); updateBrandSub(); renderStock(); renderCentrosChips(); renderIngreso(); requireLock();
 if(cloudReady()){ cloudPull(true); startCloudPoll(); }
+window.addEventListener('focus',function(){ if(cloudReady())cloudPull(true); });
+document.addEventListener('visibilitychange',function(){ if(!document.hidden && cloudReady())cloudPull(true); });
 </script>
 </body>
 </html>
