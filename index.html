@@ -410,6 +410,7 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
   <div class="filters">
     <div class="field"><label>Desde</label><input type="date" id="fDesde" onchange="renderResumen()"></div>
     <div class="field"><label>Hasta</label><input type="date" id="fHasta" onchange="renderResumen()"></div>
+    <div class="field" style="flex:none;display:flex;align-items:flex-end;"><button class="btn btn-ghost btn-sm" style="padding:12px 14px;" onclick="limpiarFechas()">Limpiar</button></div>
   </div>
 
   <div id="resumenBody"></div>
@@ -549,18 +550,29 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
     <div class="fcard">
       <div class="field"><label>Nombre del medicamento</label><input type="text" id="newName" placeholder="Ej: Oxitetraciclina 20% 250ml"></div>
       <div class="dual">
-        <div class="field"><label>Unidad</label>
-          <select id="newUnit"><option>unidad</option><option>frasco</option><option>caja</option><option>ampolla</option><option>bolsa</option><option>litro</option><option>kg</option></select>
+        <div class="field"><label>Formato / presentación</label>
+          <select id="newFormato" onchange="onFormatoChange()">
+            <option value="unidad">Por unidad (caja, ampolla, comprimido)</option>
+            <option value="10">Frasco 10 mL</option>
+            <option value="20">Frasco 20 mL</option>
+            <option value="50">Frasco 50 mL</option>
+            <option value="100">Frasco 100 mL</option>
+            <option value="250">Frasco 250 mL</option>
+            <option value="500">Frasco 500 mL</option>
+            <option value="1000">Botella 1 L</option>
+            <option value="5000">Bidón 5 L</option>
+            <option value="otro">Otro (definir mL)</option>
+          </select>
         </div>
         <div class="field"><label>Categoría</label>
           <select id="newCat"><option>Antibiótico</option><option>Antiinflamatorio</option><option>Antiparasitario</option><option>Vitamina/Mineral</option><option>Vacuna</option><option>Hormonal</option><option>Sellador/Mama</option><option>Otro</option></select>
         </div>
       </div>
+      <div class="field" id="newFormatoOtroWrap" style="display:none;"><label>Contenido del frasco/envase en mL</label><input type="number" id="newContenido" inputmode="numeric" min="0" placeholder="Ej: 30"></div>
       <div class="dual">
         <div class="field"><label>Stock bajo</label><input type="number" id="newBajo" inputmode="numeric" min="0"></div>
         <div class="field"><label>Stock crítico</label><input type="number" id="newCrit" inputmode="numeric" min="0"></div>
       </div>
-      <div class="field"><label>Contenido por frasco en mL <small style="color:var(--muted);font-weight:400">(opcional · solo inyectables que se sacan por mL)</small></label><input type="number" id="newContenido" inputmode="numeric" min="0" placeholder="Ej: 250 · déjalo vacío si se retira por unidad"></div>
     </div>
     <button class="btn btn-pri" onclick="saveNewProduct()">Guardar y continuar</button>
   </div>
@@ -759,6 +771,7 @@ const $=id=>document.getElementById(id);
 function toast(msg,type){ const t=$('toast'); t.className='toast on'+(type?' '+type:''); const ic=type==='err'?'M18 6 6 18M6 6l12 12':(type==='warn'?'M12 9v4M12 17h.01':'M5 12l5 5L20 7'); t.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="'+ic+'"/></svg>'+msg; clearTimeout(t._t); t._t=setTimeout(()=>t.className='toast',2600); }
 function statusOf(p){ if(p.stock<=0) return 'zero'; if(p.stock<=p.critico) return 'crit'; if(p.stock<=p.bajo) return 'bajo'; return 'ok'; }
 function fmtDate(iso){ const d=new Date(iso); return d.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'}); }
+function fechaLocalISO(iso){ try{ const d=new Date(iso); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }catch(e){ return String(iso||'').slice(0,10); } }
 function beep(){ try{ const c=new (window.AudioContext||window.webkitAudioContext)(); const o=c.createOscillator(),g=c.createGain(); o.connect(g);g.connect(c.destination); o.frequency.value=880; g.gain.value=.15; o.start(); setTimeout(()=>{o.stop();c.close();},120);}catch(e){} if(navigator.vibrate)navigator.vibrate(80); }
 
 /* ============ NAVEGACIÓN ============ */
@@ -833,7 +846,7 @@ function renderStock(){
   if(!shown.length){ list.innerHTML='<div class="empty"><p>Sin resultados para "'+q+'".</p></div>'; return; }
   list.innerHTML=shown.map(p=>{ const s=statusOf(p); const tag=s==='zero'?'<span class="tagchip t-zero">Agotado</span>':s==='crit'?'<span class="tagchip t-crit">Crítico</span>':s==='bajo'?'<span class="tagchip t-bajo">Stock bajo</span>':'';
     const abTag=(+p.contenido>0 && +p.abierto>0)?'<br><span class="tagchip" style="background:#e0f2fe;color:#0369a1">Abierto: '+(+p.abierto)+' mL</span>':'';
-    return '<div class="pcard s-'+s+'" onclick="editProduct(\''+p.barcode+'\')"><div class="info"><b>'+esc(p.nombre)+'</b><small>'+esc(p.categoria||'')+' · cód '+p.barcode+'</small>'+(tag?'<br>'+tag:'')+abTag+'</div><div class="qty"><div class="n">'+p.stock+'</div><div class="u">'+esc(p.unidad||'u')+'</div></div></div>'; }).join('');
+    return '<div class="pcard s-'+s+'" onclick="editProduct(\''+p.barcode+'\')"><div class="info"><b>'+esc(p.nombre)+'</b><small>'+(+p.contenido>0?esc(p.formato||fmtVol(p.contenido))+' · total '+fmtVol(totalMl(p)):esc(p.categoria||'')+' · cód '+p.barcode)+'</small>'+(tag?'<br>'+tag:'')+abTag+'</div><div class="qty"><div class="n">'+p.stock+'</div><div class="u">'+esc(p.unidad||'u')+'</div></div></div>'; }).join('');
 }
 function emptyStock(){ return '<div class="empty"><div class="e-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M11 8v8M15 8v8M19 8v8"/></svg></div><b>Aún no hay medicamentos</b><p>Ve a la pestaña <b>Ingreso</b> y escanea el primer producto para registrarlo.</p><button class="btn btn-pri btn-sm" style="margin:0 auto;" onclick="go(\'ingreso\')">Registrar primero</button></div>'; }
 function esc(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -876,7 +889,7 @@ function submitManual(){ const c=($('manualCode').value||'').trim(); if(!c){ toa
 function onScanned(code){
   if(scanCtx==='ingreso'){
     const p=DB.productos[code];
-    if(p){ addToCart(code); } else { pendingBarcode=code; $('newBarcode').textContent='Código: '+code; $('newName').value=''; $('newBajo').value=DB.cfg.bajo; $('newCrit').value=DB.cfg.critico; openModal('modalNew'); setTimeout(()=>$('newName').focus(),200); }
+    if(p){ addToCart(code); } else { pendingBarcode=code; $('newBarcode').textContent='Código: '+code; $('newName').value=''; $('newFormato').value='unidad'; onFormatoChange(); $('newBajo').value=DB.cfg.bajo; $('newCrit').value=DB.cfg.critico; openModal('modalNew'); setTimeout(()=>$('newName').focus(),200); }
   } else { // salida
     const p=findProducto(code);
     if(p){ addToSalCart(p.barcode); }
@@ -886,10 +899,20 @@ function onScanned(code){
 
 /* ============ NUEVO PRODUCTO ============ */
 let pendingBarcode=null;
+function onFormatoChange(){ $('newFormatoOtroWrap').style.display=($('newFormato').value==='otro')?'block':'none'; }
+function fmtVol(ml){ ml=+ml||0; if(ml<=0)return ''; if(ml>=1000 && ml%1000===0)return (ml/1000)+' L'; if(ml>=1000)return (ml/1000).toFixed(2).replace(/\.?0+$/,'')+' L'; return ml+' mL'; }
+function totalMl(p){ return (+p.contenido||0)*(+p.stock||0)+(+p.abierto||0); }
+function formatoDesde(val,customMl){
+  if(val==='unidad')return { contenido:0, unidad:'unidad', formato:'Por unidad' };
+  if(val==='otro'){ const ml=+customMl||0; return { contenido:ml, unidad:(ml>=1000?'bidón':'frasco'), formato:fmtVol(ml)||'Personalizado' }; }
+  const ml=+val||0; return { contenido:ml, unidad:(ml>=1000?'bidón':'frasco'), formato:(ml>=1000?fmtVol(ml):('Frasco '+ml+' mL')) };
+}
 function saveNewProduct(){
   const name=($('newName').value||'').trim(); if(!name){ toast('Escribe el nombre','warn'); return; }
-  const p={ barcode:pendingBarcode, nombre:name, unidad:$('newUnit').value, categoria:$('newCat').value, stock:0, bajo:+$('newBajo').value||0, critico:+$('newCrit').value||0, contenido:+$('newContenido').value||0, abierto:0 };
-  DB.productos[p.barcode]=p; save(); closeModal('modalNew'); addToCart(p.barcode); toast('Registrado y agregado a la lista');
+  const f=formatoDesde($('newFormato').value, $('newContenido')?$('newContenido').value:0);
+  if($('newFormato').value==='otro' && f.contenido<=0){ toast('Indica los mL del envase','warn'); return; }
+  const p={ barcode:pendingBarcode, nombre:name, unidad:f.unidad, formato:f.formato, contenido:f.contenido, categoria:$('newCat').value, stock:0, abierto:0, bajo:+$('newBajo').value||0, critico:+$('newCrit').value||0 };
+  DB.productos[p.barcode]=p; save(); closeModal('modalNew'); addToCart(p.barcode); toast('Registrado: '+name+' ('+f.formato+')');
 }
 
 /* ============ INGRESO (varios productos por documento) ============ */
@@ -923,7 +946,7 @@ function saveIngreso(){
   // Resumen de confirmación antes de guardar
   const nU=entries.reduce((s,[,q])=>s+q,0);
   const docTipoC=$('ingDocTipo').value, docNumC=($('ingDocNum').value||'').trim(), provC=($('ingProv').value||'').trim();
-  const lineas=entries.map(([bc,q])=>{ const p=DB.productos[bc]; return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(p?p.nombre:bc)+'</span><b class="num" style="flex:none;">+'+q+'</b></div>'; }).join('');
+  const lineas=entries.map(([bc,q])=>{ const p=DB.productos[bc]; const eqv=(p&&+p.contenido>0)?(' <span style="color:var(--muted);font-weight:400;">('+fmtVol(p.contenido*q)+')</span>'):''; return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(p?p.nombre:bc)+eqv+'</span><b class="num" style="flex:none;">+'+q+'</b></div>'; }).join('');
   $('confIngBody').innerHTML=
     '<div class="note" style="margin-bottom:12px;">'+esc(docTipoC)+(docNumC?' N° '+esc(docNumC):'')+(provC?' · '+esc(provC):'')+' · Foto adjunta ✓</div>'+
     lineas+
@@ -975,7 +998,7 @@ function renderSalida(){
       const frasco=+p.contenido>0;
       let toggle='';
       if(frasco){
-        toggle='<div class="chips" style="margin:6px 0 2px;"><button type="button" class="chip'+(ln.modo!=='ml'?' sel':'')+'" style="padding:6px 12px;font-size:.82rem;" onclick="salLineModo(\''+bc+'\',\'frasco\')">Frasco</button><button type="button" class="chip'+(ln.modo==='ml'?' sel':'')+'" style="padding:6px 12px;font-size:.82rem;" onclick="salLineModo(\''+bc+'\',\'ml\')">mL</button></div>';
+        toggle='<div class="chips" style="margin:6px 0 2px;"><button type="button" class="chip'+(ln.modo!=='ml'?' sel':'')+'" style="padding:6px 12px;font-size:.82rem;" onclick="salLineModo(\''+bc+'\',\'frasco\')">'+esc((p.unidad||'frasco').charAt(0).toUpperCase()+(p.unidad||'frasco').slice(1))+' entero</button><button type="button" class="chip'+(ln.modo==='ml'?' sel':'')+'" style="padding:6px 12px;font-size:.82rem;" onclick="salLineModo(\''+bc+'\',\'ml\')">Por mL</button></div>';
       }
       const unidad=ln.modo==='ml'?'mL':(p.unidad||'u');
       return '<div class="cart-line" style="flex-wrap:wrap;"><div class="cl-name" style="flex:1 1 100%;"><b>'+esc(p.nombre)+'</b><small>en bodega: '+p.stock+' '+esc(p.unidad||'u')+(frasco&&+p.abierto>0?(' · '+(+p.abierto)+' mL abiertos'):'')+'</small></div>'+toggle+
@@ -1045,13 +1068,14 @@ function doSaveSalida(){
 }
 
 /* ============ RESUMEN ============ */
+function limpiarFechas(){ $('fDesde').value=''; $('fHasta').value=''; renderResumen(); }
 let segTipo='salida';
 function setSeg(t){ segTipo=t; $('segOut').classList.toggle('on',t==='salida'); $('segIn').classList.toggle('on',t==='ingreso'); renderResumen(); }
 function renderResumen(){
   const body=$('resumenBody'); const desde=$('fDesde').value, hasta=$('fHasta').value;
   let movs=DB.movimientos.filter(m=>m.tipo===segTipo);
-  if(desde) movs=movs.filter(m=>m.fecha.slice(0,10)>=desde);
-  if(hasta) movs=movs.filter(m=>m.fecha.slice(0,10)<=hasta);
+  if(desde) movs=movs.filter(m=>fechaLocalISO(m.fecha)>=desde);
+  if(hasta) movs=movs.filter(m=>fechaLocalISO(m.fecha)<=hasta);
   movs.sort((a,b)=>b.id-a.id);
   if(!movs.length){ body.innerHTML='<div class="empty"><p>No hay '+(segTipo==='salida'?'salidas':'ingresos')+' en este período.</p></div>'; return; }
   const totalU=movs.reduce((s,m)=>s+m.cantidad,0);
@@ -1093,7 +1117,7 @@ function editProduct(bc){ if(!isAdmin()){ toast('Solo administradores pueden edi
   const bajo=prompt('Stock BAJO (alerta ámbar) para "'+p.nombre+'":',p.bajo); if(bajo!==null && bajo!=='')p.bajo=+bajo||0;
   const crit=prompt('Stock CRÍTICO (alerta roja) para "'+p.nombre+'":',p.critico); if(crit!==null && crit!=='')p.critico=+crit||0;
   const stock=prompt('Ajustar stock actual (frascos/unidades sellados · úsalo solo para corregir inventario):',p.stock); if(stock!==null && stock!=='')p.stock=+stock||0;
-  const cont=prompt('Contenido por frasco en mL (0 = se retira por unidad, no por mL):',p.contenido||0); if(cont!==null && cont!=='')p.contenido=+cont||0;
+  const cont=prompt('Contenido por frasco en mL (0 = se retira por unidad, no por mL):',p.contenido||0); if(cont!==null && cont!==''){ p.contenido=+cont||0; if(p.contenido>0){ p.unidad=(p.contenido>=1000?'bidón':'frasco'); p.formato=(p.contenido>=1000?fmtVol(p.contenido):('Frasco '+p.contenido+' mL')); } else { p.unidad='unidad'; p.formato='Por unidad'; } }
   if(+p.contenido>0){ const ab=prompt('mL que quedan en el frasco ABIERTO ahora mismo (0 si no hay ninguno abierto):',p.abierto||0); if(ab!==null && ab!=='')p.abierto=+ab||0; }
   save(); renderStock(); if($('view-config').classList.contains('active'))renderConfig(); toast('Producto actualizado');
 }
@@ -1102,8 +1126,8 @@ function editProduct(bc){ if(!isAdmin()){ toast('Solo administradores pueden edi
 function exportCSV(){
   const desde=$('fDesde').value, hasta=$('fHasta').value;
   let movs=DB.movimientos.filter(m=>m.tipo===segTipo);
-  if(desde) movs=movs.filter(m=>m.fecha.slice(0,10)>=desde);
-  if(hasta) movs=movs.filter(m=>m.fecha.slice(0,10)<=hasta);
+  if(desde) movs=movs.filter(m=>fechaLocalISO(m.fecha)>=desde);
+  if(hasta) movs=movs.filter(m=>fechaLocalISO(m.fecha)<=hasta);
   if(!movs.length){ toast('Nada que exportar','warn'); return; }
   const h=['Fecha','Tipo','Medicamento','Codigo','Cantidad','Unidad','Centro de costo','Persona','Tipo documento','N documento','Proveedor'];
   const rows=movs.map(m=>[fmtDate(m.fecha),m.tipo,m.nombre,m.barcode,m.cantidad,m.unidad||'',m.centro||'',m.persona||'',m.docTipo||'',m.docNum||'',m.proveedor||''].map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';'));
