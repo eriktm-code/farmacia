@@ -578,6 +578,48 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
   </div>
 </div>
 
+<!-- ===================== EDITAR PRODUCTO ===================== -->
+<div class="modal" id="modalEdit">
+  <div class="sheet">
+    <div class="sheet-h"><h2>Editar producto</h2><button class="x" onclick="closeModal('modalEdit')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="fcard">
+      <div class="field"><label>Nombre del medicamento</label><input type="text" id="editName"></div>
+      <div class="dual">
+        <div class="field"><label>Formato / presentación</label>
+          <select id="editFormato" onchange="onEditFormatoChange()">
+            <option value="unidad">Por unidad (caja, ampolla, comprimido)</option>
+            <option value="10">Frasco 10 mL</option>
+            <option value="20">Frasco 20 mL</option>
+            <option value="50">Frasco 50 mL</option>
+            <option value="100">Frasco 100 mL</option>
+            <option value="250">Frasco 250 mL</option>
+            <option value="500">Frasco 500 mL</option>
+            <option value="1000">Botella 1 L</option>
+            <option value="5000">Bidón 5 L</option>
+            <option value="otro">Otro (definir mL)</option>
+          </select>
+        </div>
+        <div class="field"><label>Categoría</label>
+          <select id="editCat"><option>Antibiótico</option><option>Antiinflamatorio</option><option>Antiparasitario</option><option>Vitamina/Mineral</option><option>Vacuna</option><option>Hormonal</option><option>Sellador/Mama</option><option>Otro</option></select>
+        </div>
+      </div>
+      <div class="field" id="editFormatoOtroWrap" style="display:none;"><label>Contenido del envase en mL</label><input type="number" id="editContenido" inputmode="numeric" min="0" placeholder="Ej: 30"></div>
+      <div class="dual">
+        <div class="field"><label>Stock actual (frascos/unidades)</label><input type="number" id="editStock" inputmode="numeric" min="0"></div>
+        <div class="field" id="editAbiertoWrap" style="display:none;"><label>mL en frasco abierto</label><input type="number" id="editAbierto" inputmode="numeric" min="0"></div>
+      </div>
+      <div class="dual">
+        <div class="field"><label>Stock bajo</label><input type="number" id="editBajo" inputmode="numeric" min="0"></div>
+        <div class="field"><label>Stock crítico</label><input type="number" id="editCrit" inputmode="numeric" min="0"></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" style="flex:1;color:var(--red);" onclick="delProductFromEdit()">Eliminar</button>
+      <button class="btn btn-pri" style="flex:1;" onclick="saveEditProduct()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== MANUAL CODE MODAL ===================== -->
 <div class="modal" id="modalManual">
   <div class="sheet">
@@ -1112,15 +1154,32 @@ function renderProdsCfg(){ const arr=Object.values(DB.productos).sort((a,b)=>a.n
 function delProduct(bc){ const p=DB.productos[bc]; if(!p)return; if(confirm('¿Eliminar "'+p.nombre+'"? Se borra su stock actual (se conservan los movimientos en el historial).')){ delete DB.productos[bc]; save(); renderConfig(); renderStock(); toast('Medicamento eliminado'); } }
 
 /* ============ EDITAR PRODUCTO ============ */
+let editingBc=null;
+function formatoValorDe(p){ const c=+p.contenido||0; if(c<=0)return 'unidad'; if(['10','20','50','100','250','500','1000','5000'].includes(String(c)))return String(c); return 'otro'; }
+function onEditFormatoChange(){ $('editFormatoOtroWrap').style.display=($('editFormato').value==='otro')?'block':'none'; const esFrasco=$('editFormato').value!=='unidad'; $('editAbiertoWrap').style.display=esFrasco?'block':'none'; }
 function editProduct(bc){ if(!isAdmin()){ toast('Solo administradores pueden editar productos','warn'); return; } const p=DB.productos[bc]; if(!p)return;
-  const nombre=prompt('Nombre del medicamento:',p.nombre); if(nombre===null)return; if(nombre.trim())p.nombre=nombre.trim();
-  const bajo=prompt('Stock BAJO (alerta ámbar) para "'+p.nombre+'":',p.bajo); if(bajo!==null && bajo!=='')p.bajo=+bajo||0;
-  const crit=prompt('Stock CRÍTICO (alerta roja) para "'+p.nombre+'":',p.critico); if(crit!==null && crit!=='')p.critico=+crit||0;
-  const stock=prompt('Ajustar stock actual (frascos/unidades sellados · úsalo solo para corregir inventario):',p.stock); if(stock!==null && stock!=='')p.stock=+stock||0;
-  const cont=prompt('Contenido por frasco en mL (0 = se retira por unidad, no por mL):',p.contenido||0); if(cont!==null && cont!==''){ p.contenido=+cont||0; if(p.contenido>0){ p.unidad=(p.contenido>=1000?'bidón':'frasco'); p.formato=(p.contenido>=1000?fmtVol(p.contenido):('Frasco '+p.contenido+' mL')); } else { p.unidad='unidad'; p.formato='Por unidad'; } }
-  if(+p.contenido>0){ const ab=prompt('mL que quedan en el frasco ABIERTO ahora mismo (0 si no hay ninguno abierto):',p.abierto||0); if(ab!==null && ab!=='')p.abierto=+ab||0; }
-  save(); renderStock(); if($('view-config').classList.contains('active'))renderConfig(); toast('Producto actualizado');
+  editingBc=bc;
+  $('editName').value=p.nombre||'';
+  const fv=formatoValorDe(p); $('editFormato').value=fv; $('editContenido').value=(fv==='otro'?(+p.contenido||''):'');
+  $('editCat').value=p.categoria||'Otro';
+  $('editStock').value=+p.stock||0; $('editAbierto').value=+p.abierto||0;
+  $('editBajo').value=+p.bajo||0; $('editCrit').value=+p.critico||0;
+  onEditFormatoChange();
+  openModal('modalEdit');
 }
+function saveEditProduct(){
+  const p=DB.productos[editingBc]; if(!p)return;
+  const name=($('editName').value||'').trim(); if(!name){ toast('Escribe el nombre','warn'); return; }
+  const f=formatoDesde($('editFormato').value, $('editContenido').value);
+  if($('editFormato').value==='otro' && f.contenido<=0){ toast('Indica los mL del envase','warn'); return; }
+  p.nombre=name; p.categoria=$('editCat').value;
+  p.contenido=f.contenido; p.unidad=f.unidad; p.formato=f.formato;
+  p.stock=+$('editStock').value||0;
+  p.abierto=(f.contenido>0?(+$('editAbierto').value||0):0);
+  p.bajo=+$('editBajo').value||0; p.critico=+$('editCrit').value||0;
+  save(); closeModal('modalEdit'); renderStock(); if($('view-config').classList.contains('active'))renderConfig(); toast('Producto actualizado ('+f.formato+')');
+}
+function delProductFromEdit(){ const p=DB.productos[editingBc]; if(!p)return; if(confirm('¿Eliminar "'+p.nombre+'"? Se conserva el historial de movimientos.')){ delete DB.productos[editingBc]; save(); closeModal('modalEdit'); renderStock(); if($('view-config').classList.contains('active'))renderConfig(); toast('Producto eliminado'); } }
 
 /* ============ CSV / RESPALDO ============ */
 function exportCSV(){
