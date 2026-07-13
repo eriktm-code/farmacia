@@ -272,6 +272,44 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
 .cart-empty{text-align:center;color:var(--muted);padding:22px 16px;border:2px dashed var(--line-2);border-radius:var(--r-sm);font-size:.9rem;line-height:1.5;}
 .spacer{height:8px;}
 .danger-txt{color:var(--red);}
+
+/* ===== LOTES Y VENCIMIENTOS ===== */
+.venc{font-size:.78rem;font-weight:600;display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:6px;background:var(--green-050);color:var(--green-700);}
+.venc.pronto{background:var(--amber-050);color:var(--amber);}
+.venc.vencido{background:var(--red-050);color:var(--red-deep);}
+.venc.nada{background:#eef0ee;color:var(--muted);font-weight:500;}
+.lote-row{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1.5px solid var(--line);border-radius:var(--r-sm);background:#fff;margin-bottom:8px;}
+.lote-row.sel{border-color:var(--green-500);background:var(--green-050);}
+.lote-row.venc-vencido{border-color:var(--red);background:var(--red-050);}
+.lote-row .li{flex:1;min-width:0;}
+.lote-row .li b{display:block;font-size:.95rem;}
+.lote-row .li small{display:block;color:var(--muted);font-size:.78rem;margin-top:2px;}
+.lote-row .lq{flex:none;text-align:right;}
+.lote-row .lq .n{font-family:'Barlow Condensed';font-weight:700;font-size:1.35rem;line-height:1;}
+.lote-row .lq .u{font-size:.7rem;color:var(--muted);text-transform:uppercase;}
+.lote-form{background:var(--green-050);border-radius:var(--r-sm);padding:10px 12px;margin-top:8px;}
+.lote-form .lf-row{display:flex;gap:8px;}
+.lote-form .lf-row > div{flex:1;min-width:0;}
+.lote-form label{display:block;font-size:.72rem;font-weight:600;color:var(--green-700);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;}
+.lote-form input{padding:9px 10px;border:1.5px solid var(--line-2);border-radius:8px;background:#fff;font-size:.95rem;}
+.lote-form input.falta{border-color:var(--red);background:var(--red-050);}
+.lote-form .rep{margin-top:8px;font-size:.8rem;font-weight:600;color:var(--green-700);background:#fff;border:1.5px solid var(--green-500);border-radius:999px;padding:6px 12px;}
+.ficha-h{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;}
+.ficha-h .fn{flex:1;min-width:0;}
+.ficha-h .fn h2{font-size:1.5rem;color:var(--green-900);}
+.ficha-h .fn small{color:var(--muted);font-size:.82rem;}
+.ficha-h .fq{flex:none;text-align:right;}
+.ficha-h .fq .n{font-family:'Barlow Condensed';font-weight:700;font-size:2.1rem;line-height:1;color:var(--green-900);}
+.ficha-h .fq .u{font-size:.72rem;color:var(--muted);text-transform:uppercase;}
+.ficha-s{font-family:'Barlow Condensed';font-weight:700;font-size:1.05rem;color:var(--green-900);text-transform:uppercase;letter-spacing:.5px;margin:18px 0 8px;}
+.ficha-kv{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:.92rem;}
+.ficha-kv span{color:var(--muted);}
+.ficha-kv b{text-align:right;}
+.chk{display:flex;align-items:center;gap:10px;padding:12px;background:var(--green-050);border-radius:var(--r-sm);margin-bottom:14px;cursor:pointer;}
+.chk input{width:20px;height:20px;flex:none;accent-color:var(--green-700);}
+.chk div{flex:1;}
+.chk b{display:block;font-size:.92rem;}
+.chk small{display:block;color:var(--muted);font-size:.78rem;line-height:1.35;}
 </style>
 </head>
 <body>
@@ -539,6 +577,7 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
         </div>
       </div>
       <div class="field" id="newFormatoOtroWrap" style="display:none;"><label>Contenido del frasco/envase en mL</label><input type="number" id="newContenido" inputmode="numeric" min="0" placeholder="Ej: 30"></div>
+      <label class="chk"><input type="checkbox" id="newSinLote"><div><b>Sin lote ni vencimiento</b><small>Para guantes, jeringas, insumos. Se sigue contando el stock, pero no se pide lote ni fecha de vencimiento.</small></div></label>
       <div class="dual">
         <div class="field"><label>Stock bajo</label><input type="number" id="newBajo" inputmode="numeric" min="0"></div>
         <div class="field"><label>Stock crítico</label><input type="number" id="newCrit" inputmode="numeric" min="0"></div>
@@ -574,10 +613,8 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
         </div>
       </div>
       <div class="field" id="editFormatoOtroWrap" style="display:none;"><label>Contenido del envase en mL</label><input type="number" id="editContenido" inputmode="numeric" min="0" placeholder="Ej: 30"></div>
-      <div class="dual">
-        <div class="field"><label>Stock actual (frascos/unidades)</label><input type="number" id="editStock" inputmode="numeric" min="0"></div>
-        <div class="field" id="editAbiertoWrap" style="display:none;"><label>mL en frasco abierto</label><input type="number" id="editAbierto" inputmode="numeric" min="0"></div>
-      </div>
+      <label class="chk"><input type="checkbox" id="editSinLote"><div><b>Sin lote ni vencimiento</b><small>Para guantes, jeringas, insumos. Se sigue contando el stock, pero no se pide lote ni fecha de vencimiento.</small></div></label>
+      <div class="note" style="margin-bottom:14px;">El stock ya no se corrige aquí: se ajusta lote por lote desde la ficha del producto.</div>
       <div class="dual">
         <div class="field"><label>Stock bajo</label><input type="number" id="editBajo" inputmode="numeric" min="0"></div>
         <div class="field"><label>Stock crítico</label><input type="number" id="editCrit" inputmode="numeric" min="0"></div>
@@ -596,6 +633,37 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
     <div class="sheet-h"><h2>Código a mano</h2><button class="x" onclick="closeModal('modalManual')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
     <div class="fcard"><div class="field"><label>Escribe el número del código de barra</label><input type="text" id="manualCode" inputmode="numeric" placeholder="Ej: 7801234567890"></div></div>
     <button class="btn btn-pri" onclick="submitManual()">Continuar</button>
+  </div>
+</div>
+
+<!-- ===================== FICHA DE PRODUCTO ===================== -->
+<div class="modal" id="modalFicha">
+  <div class="sheet">
+    <div class="sheet-h"><h2>Ficha del producto</h2><button class="x" onclick="closeModal('modalFicha')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div id="fichaBody"></div>
+  </div>
+</div>
+
+<!-- ===================== AJUSTAR LOTE (admin) ===================== -->
+<div class="modal" id="modalLote">
+  <div class="sheet">
+    <div class="sheet-h"><h2 id="loteTitle">Ajustar lote</h2><button class="x" onclick="closeModal('modalLote')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="fcard">
+      <div class="dual">
+        <div class="field"><label>N° de lote</label><input type="text" id="loteCodigo" placeholder="Ej: A-2291"></div>
+        <div class="field"><label>Vence</label><input type="date" id="loteVenc"></div>
+      </div>
+      <div class="dual">
+        <div class="field"><label>Cantidad (frascos/unidades)</label><input type="number" id="loteCant" inputmode="numeric" min="0" step="1"></div>
+        <div class="field" id="loteAbiertoWrap"><label>mL en frasco abierto</label><input type="number" id="loteAbierto" inputmode="decimal" min="0" step="0.5"></div>
+      </div>
+      <div class="dual">
+        <div class="field"><label>Proveedor</label><input type="text" id="loteProv" placeholder="Opcional"></div>
+        <div class="field"><label>Precio unitario $</label><input type="number" id="lotePrecio" inputmode="numeric" min="0" placeholder="Opcional"></div>
+      </div>
+    </div>
+    <button class="btn btn-pri" onclick="saveLoteEdit()">Guardar lote</button>
+    <button class="btn btn-ghost" style="margin-top:8px;color:var(--red);" onclick="delLote()">Eliminar este lote</button>
   </div>
 </div>
 
@@ -679,9 +747,66 @@ let DB={ productos:{}, movimientos:[], documentos:{}, centros:[...DEFAULT_CENTRO
 
 function load(){ try{ const r=localStorage.getItem(KEY); if(r){ DB=Object.assign(DB,JSON.parse(r)); } }catch(e){}
   if(!DB.documentos)DB.documentos={}; if(!DB.usuarios)DB.usuarios={}; if(!DB.aliases)DB.aliases={};
-  delete DB.dosis; delete DB.insemMovs; /* módulo de inseminación eliminado: se purga cualquier resto */ }
+  delete DB.dosis; delete DB.insemMovs; /* módulo de inseminación eliminado: se purga cualquier resto */
+  asegurarLotes(); }
 function save(){ saveLocalOnly(); scheduleCloudSync(); }
 function saveLocalOnly(){ try{ localStorage.setItem(KEY,JSON.stringify(DB)); }catch(e){ toast('No se pudo guardar (memoria llena)','err'); } }
+
+/* ══════════════ MOTOR DE LOTES ══════════════
+   Un producto ya no guarda un número de stock: guarda una LISTA DE LOTES.
+   p.stock y p.abierto siguen existiendo, pero son CALCULADOS (suma de los lotes).
+   Así el resto de la app (lista, alertas, buscador, CSV) no necesita cambiar.
+   lote = { id, codigo, venc, proveedor, precio, cantidad, abierto, docId, fecha } */
+
+function recalc(p){
+  if(!Array.isArray(p.lotes)) p.lotes=[];
+  p.stock   = p.lotes.reduce((s,l)=>s+(+l.cantidad||0),0);
+  p.abierto = p.lotes.reduce((s,l)=>s+(+l.abierto||0),0);
+  if(Math.abs(p.abierto)<0.0001) p.abierto=0;
+  return p;
+}
+
+/* Migración: lo que ya estaba cargado (un solo número) entra como un lote sin identificar.
+   Es idempotente: se puede llamar mil veces sin duplicar nada. */
+function asegurarLotes(){
+  Object.values(DB.productos).forEach(p=>{
+    if(!Array.isArray(p.lotes)){
+      const n=+p.stock||0, ab=+p.abierto||0;
+      p.lotes = (n>0||ab>0) ? [{ id:'L'+Date.now()+Math.floor(Math.random()*999), codigo:'', venc:'',
+                                 proveedor:'', precio:0, cantidad:n, abierto:ab, fecha:new Date().toISOString() }] : [];
+    }
+    if(typeof p.sinLote!=='boolean') p.sinLote=false;
+    recalc(p);
+  });
+}
+
+function hoyISO(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function diasVenc(v){ if(!v) return null; const h=new Date(hoyISO()+'T00:00:00'), f=new Date(v+'T00:00:00'); return Math.round((f-h)/86400000); }
+function vencClase(v){ const d=diasVenc(v); if(d===null) return 'nada'; if(d<0) return 'vencido'; if(d<=30) return 'pronto'; return ''; }
+function fmtVenc(v){ if(!v) return 'sin vencimiento'; const [a,m,d]=v.split('-'); return d+'/'+m+'/'+a; }
+function vencTxt(v){ const dd=diasVenc(v); if(dd===null) return 'sin vencimiento'; if(dd<0) return 'venció '+fmtVenc(v); if(dd===0) return 'vence hoy'; if(dd<=30) return 'vence en '+dd+(dd===1?' día':' días'); return 'vence '+fmtVenc(v); }
+function vencChip(v){ const c=vencClase(v); return '<span class="venc '+c+'">'+esc(vencTxt(v))+'</span>'; }
+function fmtCLP(n){ n=+n||0; if(!n) return ''; return '$'+n.toLocaleString('es-CL'); }
+
+/* Lotes con existencia, ordenados por el que vence PRIMERO (los sin fecha, al final) */
+function lotesDisp(p){
+  return (p.lotes||[]).filter(l=>(+l.cantidad||0)>0 || (+l.abierto||0)>0)
+    .sort((a,b)=>{ if(!a.venc && !b.venc) return 0; if(!a.venc) return 1; if(!b.venc) return -1; return a.venc.localeCompare(b.venc); });
+}
+function loteFEFO(p){ const d=lotesDisp(p); return d.length?d[0]:null; }
+function vencProx(p){ const l=loteFEFO(p); return l?(l.venc||''):''; }
+function getLote(p,id){ return (p.lotes||[]).find(l=>l.id===id)||null; }
+
+/* Última salida registrada de un producto */
+function ultimaSalida(bc){
+  for(let i=DB.movimientos.length-1;i>=0;i--){ const m=DB.movimientos[i]; if(m.tipo==='salida' && m.barcode===bc) return m; }
+  return null;
+}
+/* Último lote ingresado de un producto (para el chip "repetir último lote") */
+function ultimoLote(p){
+  const ls=(p.lotes||[]).slice().sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||'')));
+  return ls.length?ls[0]:null;
+}
 
 /* ============ NUBE: sincronización por campo (dos vías) ============ */
 let CLOUD={ url:'', grupo:'', nombre:'', auto:true, version:0, lastSync:0 };
@@ -696,9 +821,13 @@ function setCloudStatus(msg){ const el=$('cloudStatus'); if(!el)return;
   el.textContent='Campo "'+CLOUD.grupo+'" conectado'+(CLOUD.lastSync?(' · última sinc.: '+fmtDate(new Date(CLOUD.lastSync).toISOString())):'')+'.'; }
 function buildEstado(){ return { productos:DB.productos, movimientos:DB.movimientos, centros:DB.centros, usuarios:DB.usuarios, aliases:DB.aliases, cfg:DB.cfg }; }
 function buildVista(){
-  const stock=Object.values(DB.productos).map(p=>({nombre:p.nombre,codigo:p.barcode,stock:p.stock,estado:statusOf(p),unidad:p.unidad||'',categoria:p.categoria||''}));
-  const movimientos=DB.movimientos.map(m=>({fecha:fmtDate(m.fecha),tipo:m.tipo,producto:m.nombre,cantidad:m.cantidad,centro:m.centro||'',persona:m.persona||'',doc:(m.docTipo||'')+(m.docNum?' '+m.docNum:''),proveedor:m.proveedor||''}));
-  return { fecha:new Date().toISOString(), stock, movimientos };
+  const stock=Object.values(DB.productos).map(p=>({nombre:p.nombre,codigo:p.barcode,stock:p.stock,estado:statusOf(p),unidad:p.unidad||'',categoria:p.categoria||'',vence:vencProx(p)?fmtVenc(vencProx(p)):'',lotes:(p.lotes||[]).length}));
+  const movimientos=DB.movimientos.map(m=>({fecha:fmtDate(m.fecha),tipo:m.tipo,producto:m.nombre,cantidad:m.cantidad,centro:m.centro||'',persona:m.persona||'',lote:m.lote||'',vence:m.venc?fmtVenc(m.venc):'',precio:+m.precio||0,doc:(m.docTipo||'')+(m.docNum?' '+m.docNum:''),proveedor:m.proveedor||''}));
+  const lotes=[];
+  Object.values(DB.productos).forEach(p=>(p.lotes||[]).forEach(l=>{
+    lotes.push({producto:p.nombre,codigo:p.barcode,lote:l.codigo||'sin lote',vence:l.venc?fmtVenc(l.venc):'',estado:vencClase(l.venc)==='vencido'?'VENCIDO':(vencClase(l.venc)==='pronto'?'Por vencer':'Vigente'),cantidad:+l.cantidad||0,abierto:+l.abierto||0,proveedor:l.proveedor||'',precio:+l.precio||0});
+  }));
+  return { fecha:new Date().toISOString(), stock, movimientos, lotes };
 }
 function scheduleCloudSync(){ if(!cloudReady()||!CLOUD.auto)return; clearTimeout(cloudTimer); cloudTimer=setTimeout(()=>cloudPush(false),2500); }
 
@@ -757,6 +886,7 @@ function applyCloudState(estado,version){
   if(estado.productos)DB.productos=estado.productos; if(estado.movimientos)DB.movimientos=estado.movimientos;
   /* estado.dosis / estado.insemMovs: se ignoran a propósito (módulo eliminado) */
   if(estado.centros)DB.centros=estado.centros; if(estado.usuarios)DB.usuarios=estado.usuarios; if(estado.aliases)DB.aliases=estado.aliases; if(estado.cfg)DB.cfg=estado.cfg;
+  asegurarLotes();
   CLOUD.version=version||Date.now(); CLOUD.lastSync=Date.now(); saveCloudStore(); saveLocalOnly(); setCloudStatus(); refreshAll(); requireLock();
 }
 function cloudConnectManual(){ saveCloudCfg(); if(!cloudReady()){ toast('Completa el campo y la URL','warn'); return; }
@@ -845,7 +975,8 @@ function renderStock(){
   if(!shown.length){ list.innerHTML='<div class="empty"><p>Sin resultados para "'+q+'".</p></div>'; return; }
   list.innerHTML=shown.map(p=>{ const s=statusOf(p); const tag=s==='zero'?'<span class="tagchip t-zero">Agotado</span>':s==='crit'?'<span class="tagchip t-crit">Crítico</span>':s==='bajo'?'<span class="tagchip t-bajo">Stock bajo</span>':'';
     const abTag=(+p.contenido>0 && +p.abierto>0)?'<br><span class="tagchip" style="background:#e0f2fe;color:#0369a1">Abierto: '+(+p.abierto)+' mL</span>':'';
-    return '<div class="pcard s-'+s+'" onclick="editProduct(\''+p.barcode+'\')"><div class="info"><b>'+esc(p.nombre)+'</b><small>'+(+p.contenido>0?esc(p.formato||fmtVol(p.contenido))+' · total '+fmtVol(totalMl(p)):esc(p.categoria||'')+' · cód '+p.barcode)+'</small>'+(tag?'<br>'+tag:'')+abTag+'</div><div class="qty"><div class="n">'+p.stock+'</div><div class="u">'+esc(p.unidad||'u')+'</div></div></div>'; }).join('');
+    const vTag=(!p.sinLote && p.stock>0)?('<br>'+vencChip(vencProx(p))):'';
+    return '<div class="pcard s-'+s+'" onclick="openFicha(\''+p.barcode+'\')"><div class="info"><b>'+esc(p.nombre)+'</b><small>'+(+p.contenido>0?esc(p.formato||fmtVol(p.contenido))+' · total '+fmtVol(totalMl(p)):esc(p.categoria||'')+' · cód '+p.barcode)+'</small>'+(tag?'<br>'+tag:'')+vTag+abTag+'</div><div class="qty"><div class="n">'+p.stock+'</div><div class="u">'+esc(p.unidad||'u')+'</div></div></div>'; }).join('');
 }
 function emptyStock(){ return '<div class="empty"><div class="e-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M11 8v8M15 8v8M19 8v8"/></svg></div><b>Aún no hay medicamentos</b><p>Ve a la pestaña <b>Ingreso</b> y escanea el primer producto para registrarlo.</p><button class="btn btn-pri btn-sm" style="margin:0 auto;" onclick="go(\'ingreso\')">Registrar primero</button></div>'; }
 function esc(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -910,15 +1041,29 @@ function saveNewProduct(){
   const name=($('newName').value||'').trim(); if(!name){ toast('Escribe el nombre','warn'); return; }
   const f=formatoDesde($('newFormato').value, $('newContenido')?$('newContenido').value:0);
   if($('newFormato').value==='otro' && f.contenido<=0){ toast('Indica los mL del envase','warn'); return; }
-  const p={ barcode:pendingBarcode, nombre:name, unidad:f.unidad, formato:f.formato, contenido:f.contenido, categoria:$('newCat').value, stock:0, abierto:0, bajo:+$('newBajo').value||0, critico:+$('newCrit').value||0 };
+  const p={ barcode:pendingBarcode, nombre:name, unidad:f.unidad, formato:f.formato, contenido:f.contenido, categoria:$('newCat').value, sinLote:$('newSinLote').checked, lotes:[], stock:0, abierto:0, bajo:+$('newBajo').value||0, critico:+$('newCrit').value||0 };
   DB.productos[p.barcode]=p; save(); closeModal('modalNew'); addToCart(p.barcode); toast('Registrado: '+name+' ('+f.formato+')');
 }
 
 /* ============ INGRESO (varios productos por documento) ============ */
 let ingCart={}, ingPhotoData=null;
-function addToCart(bc){ ingCart[bc]=(ingCart[bc]||0)+1; go('ingreso'); renderIngreso(); const p=DB.productos[bc]; toast('Agregado: '+p.nombre+(ingCart[bc]>1?' (x'+ingCart[bc]+')':'')); }
-function cartStep(bc,d){ ingCart[bc]=(ingCart[bc]||0)+d; if(ingCart[bc]<=0)delete ingCart[bc]; renderIngreso(); }
+/* Cada línea del carro ahora es un objeto: { qty, codigo, venc, precio } */
+function addToCart(bc){
+  const p=DB.productos[bc]; if(!p)return;
+  if(ingCart[bc]) ingCart[bc].qty+=1;
+  else ingCart[bc]={ qty:1, codigo:'', venc:'', precio:'' };
+  go('ingreso'); renderIngreso();
+  toast('Agregado: '+p.nombre+(ingCart[bc].qty>1?' (x'+ingCart[bc].qty+')':''));
+}
+function cartStep(bc,d){ if(!ingCart[bc])return; ingCart[bc].qty+=d; if(ingCart[bc].qty<=0)delete ingCart[bc]; renderIngreso(); }
 function cartRemove(bc){ delete ingCart[bc]; renderIngreso(); }
+function cartSet(bc,campo,val){ if(!ingCart[bc])return; ingCart[bc][campo]=val; }
+function cartRepetir(bc){
+  const p=DB.productos[bc]; const l=ultimoLote(p);
+  if(!l || (!l.codigo && !l.venc)){ toast('Este producto no tiene un lote anterior','warn'); return; }
+  ingCart[bc].codigo=l.codigo||''; ingCart[bc].venc=l.venc||''; if(+l.precio>0)ingCart[bc].precio=+l.precio;
+  renderIngreso(); toast('Lote anterior copiado');
+}
 function scannedHTML(p){ const ab=(+p.contenido>0 && +p.abierto>0)?(' · '+(+p.abierto)+' mL abiertos'):''; return '<div class="bc"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M4 6v12M8 6v12M11 6v12M15 6v12M18 6v12M21 6v12"/></svg></div><div class="d"><b>'+esc(p.nombre)+'</b><small>cód '+p.barcode+' · <span class="stocknow">'+p.stock+' '+esc(p.unidad||'u')+' en bodega'+ab+'</span></small></div>'; }
 function stepQty(which,d){ const el=$(which+'Qty'); let v=(+el.value||0)+d; if(v<1)v=1; el.value=v; }
 
@@ -926,11 +1071,29 @@ function renderIngreso(){
   const slot=$('ingPhotoSlot');
   if(ingPhotoData){ slot.innerHTML='<div class="photo-prev"><img src="'+ingPhotoData+'"><button class="rm" onclick="clearPhoto()"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>'; }
   else { slot.innerHTML='<button class="photo-btn" onclick="document.getElementById(\'ingPhoto\').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3.5"/></svg> Tomar foto del documento</button>'; }
-  const entries=Object.entries(ingCart); const nU=entries.reduce((s,[,q])=>s+q,0);
+  const entries=Object.entries(ingCart); const nU=entries.reduce((s,[,ln])=>s+ln.qty,0);
   $('cartCount').textContent=entries.length?(entries.length+(entries.length===1?' producto · ':' productos · ')+nU+' u'):'';
   const list=$('ingCartList');
   if(!entries.length){ list.innerHTML='<div class="cart-empty">Escanea los productos de esta factura.<br>Se irán sumando aquí y guardas todo de una vez.</div>'; }
-  else { list.innerHTML=entries.map(([bc,q])=>{ const p=DB.productos[bc]; return '<div class="cart-line"><div class="cl-name"><b>'+esc(p.nombre)+'</b><small>cód '+bc+'</small></div><div class="mini-step"><button onclick="cartStep(\''+bc+'\',-1)">−</button><span class="q">'+q+'</span><button onclick="cartStep(\''+bc+'\',1)">+</button></div><button class="rm-line" onclick="cartRemove(\''+bc+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>'; }).join(''); }
+  else { list.innerHTML=entries.map(([bc,ln])=>{
+    const p=DB.productos[bc]; if(!p)return '';
+    const del='<button class="rm-line" onclick="cartRemove(\''+bc+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>';
+    const cab='<div class="cart-line" style="flex-wrap:wrap;border-bottom:none;padding-bottom:4px;"><div class="cl-name"><b>'+esc(p.nombre)+'</b><small>cód '+bc+'</small></div><div class="mini-step"><button onclick="cartStep(\''+bc+'\',-1)">−</button><span class="q">'+ln.qty+'</span><button onclick="cartStep(\''+bc+'\',1)">+</button></div>'+del+'</div>';
+    if(p.sinLote){
+      return cab+'<div class="lote-form" style="margin:0 0 12px;"><div class="lf-row"><div><label>Precio unitario $ (opcional)</label><input type="number" inputmode="numeric" min="0" value="'+(ln.precio||'')+'" placeholder="Opcional" oninput="cartSet(\''+bc+'\',\'precio\',this.value)"></div></div><div style="font-size:.78rem;color:var(--muted);margin-top:6px;">Producto sin lote ni vencimiento.</div></div>';
+    }
+    const rep=ultimoLote(p)?'<button class="rep" onclick="cartRepetir(\''+bc+'\')">↻ Repetir último lote</button>':'';
+    return cab+
+      '<div class="lote-form" style="margin:0 0 12px;">'+
+        '<div class="lf-row">'+
+          '<div><label>N° de lote *</label><input type="text" class="'+(ln.codigo?'':'falta')+'" value="'+esc(ln.codigo)+'" placeholder="Ej: A-2291" oninput="cartSet(\''+bc+'\',\'codigo\',this.value)"></div>'+
+          '<div><label>Vence *</label><input type="date" class="'+(ln.venc?'':'falta')+'" value="'+(ln.venc||'')+'" oninput="cartSet(\''+bc+'\',\'venc\',this.value)"></div>'+
+        '</div>'+
+        '<div class="lf-row" style="margin-top:8px;">'+
+          '<div><label>Precio unitario $ (opcional)</label><input type="number" inputmode="numeric" min="0" value="'+(ln.precio||'')+'" placeholder="Opcional" oninput="cartSet(\''+bc+'\',\'precio\',this.value)"></div>'+
+        '</div>'+rep+
+      '</div>';
+  }).join(''); }
   $('ingSaveLabel').textContent=entries.length?('Guardar ingreso ('+entries.length+' prod · '+nU+' u)'):'Guardar ingreso';
 }
 function clearPhoto(){ ingPhotoData=null; $('ingPhoto').value=''; renderIngreso(); }
@@ -942,10 +1105,16 @@ function saveIngreso(){
   const entries=Object.entries(ingCart);
   if(!entries.length){ toast('Escanea al menos un producto','warn'); return; }
   if(!ingPhotoData){ toast('Falta la foto del documento','warn'); return; }
+  // Lote y vencimiento son obligatorios (salvo productos sin lote)
+  const falta=entries.find(([bc,ln])=>{ const p=DB.productos[bc]; return p && !p.sinLote && (!String(ln.codigo||'').trim() || !ln.venc); });
+  if(falta){ const p=DB.productos[falta[0]]; toast('Falta el lote o el vencimiento de '+p.nombre,'warn'); renderIngreso(); return; }
   // Resumen de confirmación antes de guardar
-  const nU=entries.reduce((s,[,q])=>s+q,0);
+  const nU=entries.reduce((s,[,ln])=>s+ln.qty,0);
   const docTipoC=$('ingDocTipo').value, docNumC=($('ingDocNum').value||'').trim(), provC=($('ingProv').value||'').trim();
-  const lineas=entries.map(([bc,q])=>{ const p=DB.productos[bc]; const eqv=(p&&+p.contenido>0)?(' <span style="color:var(--muted);font-weight:400;">('+fmtVol(p.contenido*q)+')</span>'):''; return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(p?p.nombre:bc)+eqv+'</span><b class="num" style="flex:none;">+'+q+'</b></div>'; }).join('');
+  const lineas=entries.map(([bc,ln])=>{ const p=DB.productos[bc]; const q=ln.qty;
+    const sub=p.sinLote?'sin lote':('lote '+esc(String(ln.codigo).trim())+' · '+fmtVenc(ln.venc));
+    const pr=(+ln.precio>0)?(' · '+fmtCLP(+ln.precio)+' c/u'):'';
+    return '<div style="padding:6px 0;border-bottom:1px solid var(--line);"><div style="display:flex;justify-content:space-between;gap:10px;"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(p?p.nombre:bc)+'</span><b class="num" style="flex:none;">+'+q+'</b></div><small style="color:var(--muted);font-size:.78rem;">'+sub+pr+'</small></div>'; }).join('');
   $('confIngBody').innerHTML=
     '<div class="note" style="margin-bottom:12px;">'+esc(docTipoC)+(docNumC?' N° '+esc(docNumC):'')+(provC?' · '+esc(provC):'')+' · Foto adjunta ✓</div>'+
     lineas+
@@ -959,8 +1128,19 @@ function doSaveIngreso(){
   const docId='D'+Date.now(); const docTipo=$('ingDocTipo').value, docNum=($('ingDocNum').value||'').trim(), prov=($('ingProv').value||'').trim();
   DB.documentos[docId]={ id:docId, tipo:docTipo, num:docNum, proveedor:prov, foto:ingPhotoData, fecha:new Date().toISOString() };
   let prod=0,uni=0;
-  entries.forEach(([bc,qty],i)=>{ const p=DB.productos[bc]; if(!p)return; p.stock+=qty; prod++; uni+=qty;
-    DB.movimientos.push({ id:Date.now()+i, tipo:'ingreso', barcode:bc, nombre:p.nombre, unidad:p.unidad, cantidad:qty, fecha:new Date().toISOString(), docId:docId, docTipo:docTipo, docNum:docNum, proveedor:prov }); });
+  entries.forEach(([bc,ln],i)=>{
+    const p=DB.productos[bc]; if(!p)return;
+    const qty=ln.qty;
+    const codigo=p.sinLote?'':String(ln.codigo||'').trim();
+    const venc=p.sinLote?'':(ln.venc||'');
+    const precio=+ln.precio||0;
+    if(!Array.isArray(p.lotes))p.lotes=[];
+    // ¿ya existe este lote (mismo N° y mismo vencimiento)? -> se suma. Si no, se crea.
+    let lote=p.lotes.find(l=>String(l.codigo||'').trim().toLowerCase()===codigo.toLowerCase() && (l.venc||'')===venc);
+    if(lote){ lote.cantidad=(+lote.cantidad||0)+qty; if(precio>0)lote.precio=precio; if(prov)lote.proveedor=prov; lote.fecha=new Date().toISOString(); }
+    else { lote={ id:'L'+Date.now()+i+Math.floor(Math.random()*999), codigo:codigo, venc:venc, proveedor:prov||'', precio:precio, cantidad:qty, abierto:0, docId:docId, fecha:new Date().toISOString() }; p.lotes.push(lote); }
+    recalc(p); prod++; uni+=qty;
+    DB.movimientos.push({ id:Date.now()+i, tipo:'ingreso', barcode:bc, nombre:p.nombre, unidad:p.unidad, cantidad:qty, fecha:new Date().toISOString(), loteId:lote.id, lote:codigo, venc:venc, precio:precio, docId:docId, docTipo:docTipo, docNum:docNum, proveedor:prov }); });
   save(); toast('Ingreso guardado: '+prod+' productos, '+uni+' unidades');
   subirFotoDocumento(docId); // sube la foto al Drive/Sheet en segundo plano (no bloquea el guardado)
   ingCart={}; ingPhotoData=null; $('ingDocNum').value=''; $('ingProv').value=''; $('ingPhoto').value='';
@@ -999,11 +1179,24 @@ function renderSalida(){
       if(frasco){
         toggle='<div class="chips" style="margin:6px 0 2px;"><button type="button" class="chip'+(ln.modo!=='ml'?' sel':'')+'" style="padding:6px 12px;font-size:.82rem;" onclick="salLineModo(\''+bc+'\',\'frasco\')">'+esc((p.unidad||'frasco').charAt(0).toUpperCase()+(p.unidad||'frasco').slice(1))+' entero</button><button type="button" class="chip'+(ln.modo==='ml'?' sel':'')+'" style="padding:6px 12px;font-size:.82rem;" onclick="salLineModo(\''+bc+'\',\'ml\')">Por mL</button></div>';
       }
+      /* Selector de lote: solo si el producto los maneja y hay más de uno */
+      let loteSel='';
+      const disp=lotesDisp(p);
+      if(!p.sinLote && disp.length){
+        if(!ln.loteId || !disp.find(l=>l.id===ln.loteId)) ln.loteId=disp[0].id;
+        loteSel=disp.map(l=>{
+          const on=ln.loteId===l.id, vc=vencClase(l.venc);
+          return '<div class="lote-row'+(on?' sel':'')+(on&&vc==='vencido'?' venc-vencido':'')+'" onclick="salLineLote(\''+bc+'\',\''+l.id+'\')" style="cursor:pointer;margin-bottom:6px;">'+
+            '<div class="li"><b>'+(l.codigo?'Lote '+esc(l.codigo):'Sin lote')+'</b><small>'+esc(vencTxt(l.venc))+(l.proveedor?' · '+esc(l.proveedor):'')+'</small></div>'+
+            '<div class="lq"><div class="n">'+(+l.cantidad||0)+'</div><div class="u">'+esc(p.unidad||'u')+(+l.abierto>0?' +'+(+l.abierto)+'mL':'')+'</div></div></div>';
+        }).join('');
+        loteSel='<div style="flex:1 1 100%;margin:8px 0 2px;"><div style="font-size:.72rem;font-weight:600;color:var(--green-700);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;">Lote que retira '+(disp.length>1?'(se sugiere el que vence primero)':'')+'</div>'+loteSel+'</div>';
+      }
       const unidad=ln.modo==='ml'?'mL':(p.unidad||'u');
       const qCtrl=(ln.modo==='ml')
         ? '<input type="number" inputmode="decimal" min="0" step="0.5" value="'+ln.cantidad+'" onchange="salLineSet(\''+bc+'\',this.value)" onfocus="this.select()" style="width:80px;text-align:center;font-family:\'Barlow Condensed\';font-weight:700;font-size:1.2rem;padding:6px 4px;border:1.5px solid var(--green-500);border-radius:8px;background:#fff;">'
         : '<span class="q">'+ln.cantidad+'</span>';
-      return '<div class="cart-line" style="flex-wrap:wrap;"><div class="cl-name" style="flex:1 1 100%;"><b>'+esc(p.nombre)+'</b><small>en bodega: '+p.stock+' '+esc(p.unidad||'u')+(frasco&&+p.abierto>0?(' · '+(+p.abierto)+' mL abiertos'):'')+'</small></div>'+toggle+
+      return '<div class="cart-line" style="flex-wrap:wrap;"><div class="cl-name" style="flex:1 1 100%;"><b>'+esc(p.nombre)+'</b><small>en bodega: '+p.stock+' '+esc(p.unidad||'u')+(frasco&&+p.abierto>0?(' · '+(+p.abierto)+' mL abiertos'):'')+'</small></div>'+loteSel+toggle+
         '<div class="mini-step" style="margin-top:4px;"><button onclick="salLineStep(\''+bc+'\',-1)">−</button>'+qCtrl+'<button onclick="salLineStep(\''+bc+'\',1)">+</button><span style="font-size:.8rem;color:var(--muted);margin-left:2px;">'+unidad+'</span></div>'+
         '<button class="rm-line" style="margin-left:auto;margin-top:4px;" onclick="salLineRemove(\''+bc+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>';
     }).join('');
@@ -1013,9 +1206,13 @@ function renderSalida(){
 function addToSalCart(bc){
   const p=DB.productos[bc]; if(!p)return;
   if(salCart[bc]){ salLineStep(bc,1); }
-  else { salCart[bc]={ modo:(+p.contenido>0?'frasco':'unidad'), cantidad:1 }; }
+  else {
+    const fefo=loteFEFO(p); // se preselecciona SOLO el lote que vence primero
+    salCart[bc]={ modo:(+p.contenido>0?'frasco':'unidad'), cantidad:1, loteId:(fefo?fefo.id:null) };
+  }
   go('salida'); renderSalida(); toast('Agregado: '+p.nombre);
 }
+function salLineLote(bc,id){ if(!salCart[bc])return; salCart[bc].loteId=id; renderSalida(); }
 function salLineModo(bc,modo){ if(!salCart[bc])return; salCart[bc].modo=modo; salCart[bc].cantidad=(modo==='ml'?10:1); renderSalida(); }
 function salLineStep(bc,d){ if(!salCart[bc])return; const step=(salCart[bc].modo==='ml')?( d>0?5:-5 ):d; let v=(+salCart[bc].cantidad||0)+step; if(v<(salCart[bc].modo==='ml'?0.5:1))v=(salCart[bc].modo==='ml'?0.5:1); salCart[bc].cantidad=Math.round(v*10)/10; renderSalida(); }
 function salLineSet(bc,val){ if(!salCart[bc])return; let v=parseFloat(String(val).replace(',','.')); if(isNaN(v)||v<0)v=0; salCart[bc].cantidad=Math.round(v*10)/10; renderSalida(); }
@@ -1043,7 +1240,16 @@ function saveSalida(){
   if(!salCentro){ toast('Elige un centro de costo','warn'); return; }
   const persona=($('salPersona').value||'').trim(); if(!persona){ toast('Indica quién retira','warn'); return; }
   const invalida=entries.find(([bc,ln])=>!(+ln.cantidad>0)); if(invalida){ toast('Revisa la cantidad de '+(DB.productos[invalida[0]]?DB.productos[invalida[0]].nombre:'un producto'),'warn'); return; }
-  const lineas=entries.map(([bc,ln])=>{ const p=DB.productos[bc]; const u=ln.modo==='ml'?'mL':(p.unidad||'u'); const falta=(ln.modo==='ml')?false:(ln.cantidad>p.stock); return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(p.nombre)+(falta?' <span class="danger-txt">(sobre stock)</span>':'')+'</span><b class="num" style="flex:none;">−'+ln.cantidad+' '+u+'</b></div>'; }).join('');
+  // Lote vencido: no se bloquea, pero se avisa fuerte y queda estampado el responsable
+  const vencidos=entries.filter(([bc,ln])=>{ const p=DB.productos[bc]; const l=getLote(p,ln.loteId); return l && vencClase(l.venc)==='vencido'; });
+  if(vencidos.length){
+    const nombres=vencidos.map(([bc,ln])=>{ const p=DB.productos[bc]; const l=getLote(p,ln.loteId); return p.nombre+' (lote '+(l.codigo||'s/n')+', '+vencTxt(l.venc)+')'; }).join('\n• ');
+    if(!confirm('⚠ ESTÁS RETIRANDO PRODUCTO VENCIDO\n\n• '+nombres+'\n\nQuedará registrado a nombre de '+persona+'.\n\n¿Confirmas que lo retiras igual?')) return;
+  }
+  const lineas=entries.map(([bc,ln])=>{ const p=DB.productos[bc]; const u=ln.modo==='ml'?'mL':(p.unidad||'u'); const falta=(ln.modo==='ml')?false:(ln.cantidad>p.stock);
+    const l=getLote(p,ln.loteId); const vc=l?vencClase(l.venc):'';
+    const sub=(!p.sinLote&&l)?('<small style="color:'+(vc==='vencido'?'var(--red-deep)':'var(--muted)')+';font-size:.78rem;">'+(l.codigo?'lote '+esc(l.codigo):'sin lote')+' · '+esc(vencTxt(l.venc))+(vc==='vencido'?' ⚠':'')+'</small>'):'';
+    return '<div style="padding:6px 0;border-bottom:1px solid var(--line);"><div style="display:flex;justify-content:space-between;gap:10px;"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(p.nombre)+(falta?' <span class="danger-txt">(sobre stock)</span>':'')+'</span><b class="num" style="flex:none;">−'+ln.cantidad+' '+u+'</b></div>'+sub+'</div>'; }).join('');
   $('confSalBody').innerHTML='<div class="note" style="margin-bottom:12px;">'+esc(salCentro)+' · Retira: '+esc(persona)+'</div>'+lineas;
   openModal('modalConfirmSal');
 }
@@ -1054,16 +1260,27 @@ function doSaveSalida(){
   let avisos=[];
   entries.forEach(([bc,ln])=>{
     const p=DB.productos[bc]; if(!p)return; const cont=+p.contenido||0; let unidadMov=p.unidad;
+    if(!Array.isArray(p.lotes))p.lotes=[];
+    // El lote elegido; si no hay ninguno (stock en cero), se crea uno de emergencia para no perder el registro
+    let lote=getLote(p,ln.loteId) || loteFEFO(p);
+    if(!lote){ lote={ id:'L'+Date.now()+Math.floor(Math.random()*999), codigo:'', venc:'', proveedor:'', precio:0, cantidad:0, abierto:0, fecha:new Date().toISOString() }; p.lotes.push(lote); }
+    const vencido=(vencClase(lote.venc)==='vencido');
     if(ln.modo==='ml' && cont>0){
-      p.abierto=+p.abierto||0; let need=ln.cantidad;
-      while(need>p.abierto && p.stock>0){ p.stock-=1; p.abierto+=cont; }
-      p.abierto-=need; if(p.abierto<0.0001 && p.abierto>-0.0001)p.abierto=0;
+      lote.abierto=+lote.abierto||0; let need=+ln.cantidad||0;
+      // Abre frascos DEL MISMO LOTE hasta cubrir los mL pedidos
+      while(need>lote.abierto+0.0001 && (+lote.cantidad||0)>0){ lote.cantidad-=1; lote.abierto+=cont; }
+      lote.abierto-=need; if(Math.abs(lote.abierto)<0.0001)lote.abierto=0;
       unidadMov='mL';
     } else {
-      p.stock-=ln.cantidad;
+      lote.cantidad=(+lote.cantidad||0)-ln.cantidad;
     }
-    DB.movimientos.push({ id:Date.now()+Math.floor(Math.random()*1000), tipo:'salida', barcode:p.barcode, nombre:p.nombre, unidad:unidadMov, cantidad:ln.cantidad, fecha:new Date().toISOString(), centro:salCentro, persona:persona });
-    const s=statusOf(p); if(s==='zero')avisos.push(p.nombre+' AGOTADO'); else if(s==='crit')avisos.push(p.nombre+' crítico'); 
+    // Un lote agotado (0 frascos y 0 mL) desaparece de la lista; su historial queda en los movimientos
+    p.lotes=p.lotes.filter(l=>(+l.cantidad||0)!==0 || (+l.abierto||0)!==0 || l.id===lote.id);
+    if((+lote.cantidad||0)===0 && (+lote.abierto||0)===0) p.lotes=p.lotes.filter(l=>l.id!==lote.id);
+    recalc(p);
+    DB.movimientos.push({ id:Date.now()+Math.floor(Math.random()*1000), tipo:'salida', barcode:p.barcode, nombre:p.nombre, unidad:unidadMov, cantidad:ln.cantidad, fecha:new Date().toISOString(), centro:salCentro, persona:persona, loteId:lote.id, lote:lote.codigo||'', venc:lote.venc||'', precio:+lote.precio||0, vencido:vencido });
+    if(vencido)avisos.push(p.nombre+' VENCIDO retirado por '+persona);
+    const s=statusOf(p); if(s==='zero')avisos.push(p.nombre+' AGOTADO'); else if(s==='crit')avisos.push(p.nombre+' crítico');
   });
   if(persona && !DB.personas.includes(persona))DB.personas.push(persona);
   save();
@@ -1115,16 +1332,114 @@ function renderProdsCfg(){ const arr=Object.values(DB.productos).sort((a,b)=>a.n
   $('cfgProds').innerHTML=arr.map(p=>'<div class="row-item"><div class="ri-name" onclick="editProduct(\''+p.barcode+'\')" style="cursor:pointer">'+esc(p.nombre)+'<br><small style="color:var(--muted);font-weight:400">'+p.stock+' '+esc(p.unidad||'u')+' · bajo '+p.bajo+' / crít '+p.critico+'</small></div><button class="del" onclick="delProduct(\''+p.barcode+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>').join(''); }
 function delProduct(bc){ const p=DB.productos[bc]; if(!p)return; if(confirm('¿Eliminar "'+p.nombre+'"? Se borra su stock actual (se conservan los movimientos en el historial).')){ delete DB.productos[bc]; save(); renderConfig(); renderStock(); toast('Medicamento eliminado'); } }
 
+/* ============ FICHA DE PRODUCTO (la ve todo el mundo) ============ */
+let fichaBc=null;
+function openFicha(bc){
+  const p=DB.productos[bc]; if(!p)return;
+  fichaBc=bc; recalc(p);
+  const admin=isAdmin();
+  const us=ultimaSalida(bc);
+  const disp=lotesDisp(p);
+  const valor=(p.lotes||[]).reduce((s,l)=>s+((+l.precio||0)*(+l.cantidad||0)),0);
+
+  let h='<div class="ficha-h"><div class="fn"><h2>'+esc(p.nombre)+'</h2><small>'+esc(p.categoria||'')+' · cód '+esc(bc)+(p.formato?' · '+esc(p.formato):'')+'</small></div>'+
+        '<div class="fq"><div class="n">'+p.stock+'</div><div class="u">'+esc(p.unidad||'u')+'</div></div></div>';
+
+  if(!p.sinLote) h+='<div style="margin-bottom:4px;">'+vencChip(vencProx(p))+'</div>';
+
+  h+='<div class="ficha-s">Resumen</div>';
+  h+='<div class="ficha-kv"><span>Stock actual</span><b>'+p.stock+' '+esc(p.unidad||'u')+'</b></div>';
+  if(+p.contenido>0){
+    h+='<div class="ficha-kv"><span>Frasco abierto</span><b>'+(+p.abierto>0?(+p.abierto)+' mL':'ninguno')+'</b></div>';
+    h+='<div class="ficha-kv"><span>Volumen total</span><b>'+(fmtVol(totalMl(p))||'0 mL')+'</b></div>';
+  }
+  if(!p.sinLote) h+='<div class="ficha-kv"><span>Vence primero</span><b>'+esc(vencTxt(vencProx(p)))+'</b></div>';
+  if(valor>0) h+='<div class="ficha-kv"><span>Valor en bodega</span><b>'+fmtCLP(valor)+'</b></div>';
+  h+='<div class="ficha-kv"><span>Alerta stock bajo / crítico</span><b>'+(+p.bajo||0)+' / '+(+p.critico||0)+'</b></div>';
+
+  h+='<div class="ficha-s">Última salida</div>';
+  if(!us) h+='<div class="cart-empty" style="padding:14px;">Este producto nunca ha salido de bodega.</div>';
+  else{
+    h+='<div class="ficha-kv"><span>Cuándo</span><b>'+esc(fmtDate(us.fecha))+'</b></div>';
+    h+='<div class="ficha-kv"><span>Cuánto</span><b>'+us.cantidad+' '+esc(us.unidad||'u')+'</b></div>';
+    h+='<div class="ficha-kv"><span>Quién retiró</span><b>'+esc(us.persona||'—')+'</b></div>';
+    h+='<div class="ficha-kv"><span>Centro de costo</span><b>'+esc(us.centro||'—')+'</b></div>';
+    if(us.lote) h+='<div class="ficha-kv"><span>Lote</span><b>'+esc(us.lote)+(us.vencido?' ⚠ vencido':'')+'</b></div>';
+  }
+
+  if(!p.sinLote){
+    h+='<div class="ficha-s">Lotes en bodega ('+disp.length+')</div>';
+    if(!disp.length) h+='<div class="cart-empty" style="padding:14px;">Sin existencias. Los lotes aparecen al registrar un ingreso.</div>';
+    else h+=disp.map(l=>{
+      const vc=vencClase(l.venc);
+      return '<div class="lote-row'+(vc==='vencido'?' venc-vencido':'')+'"'+(admin?' onclick="editLote(\''+l.id+'\')" style="cursor:pointer;"':'')+'>'+
+        '<div class="li"><b>'+(l.codigo?'Lote '+esc(l.codigo):'Sin lote registrado')+'</b>'+
+        '<small>'+esc(vencTxt(l.venc))+(l.proveedor?' · '+esc(l.proveedor):'')+((+l.precio>0)?' · '+fmtCLP(l.precio)+' c/u':'')+'</small></div>'+
+        '<div class="lq"><div class="n">'+(+l.cantidad||0)+'</div><div class="u">'+esc(p.unidad||'u')+((+l.abierto>0)?' · '+(+l.abierto)+' mL':'')+'</div></div></div>';
+    }).join('');
+    if(admin && disp.length) h+='<div class="note" style="margin-top:2px;">Toca un lote para corregir su cantidad, número o vencimiento.</div>';
+  }
+
+  const movs=DB.movimientos.filter(m=>m.barcode===bc).sort((a,b)=>b.id-a.id).slice(0,12);
+  h+='<div class="ficha-s">Movimientos recientes</div>';
+  if(!movs.length) h+='<div class="cart-empty" style="padding:14px;">Sin movimientos.</div>';
+  else h+=movs.map(m=>{ const inn=m.tipo==='ingreso';
+    const sub=(inn?(m.proveedor||m.docTipo||'Ingreso'):((m.persona||'')+(m.centro?' · '+m.centro:'')))+(m.lote?' · lote '+m.lote:'');
+    return '<div class="mov"><div class="dot '+(inn?'in':'out')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="'+(inn?'M12 5v14M5 12h14':'M5 12h14M13 6l6 6-6 6')+'"/></svg></div><div class="m-info"><b>'+esc(sub)+'</b><small>'+fmtDate(m.fecha)+'</small></div><div class="m-qty '+(inn?'in':'out')+'">'+(inn?'+':'−')+m.cantidad+' '+esc(m.unidad||'')+'</div></div>';
+  }).join('');
+
+  if(admin) h+='<button class="btn btn-ghost" style="margin-top:18px;" onclick="closeModal(\'modalFicha\');editProduct(\''+bc+'\')">Editar producto</button>';
+  $('fichaBody').innerHTML=h;
+  openModal('modalFicha');
+}
+
+/* ============ AJUSTAR UN LOTE (solo admin) ============ */
+let loteEditId=null;
+function editLote(id){
+  if(!isAdmin()){ toast('Solo administradores pueden ajustar lotes','warn'); return; }
+  const p=DB.productos[fichaBc]; if(!p)return;
+  const l=getLote(p,id); if(!l)return;
+  loteEditId=id;
+  $('loteTitle').textContent=l.codigo?('Lote '+l.codigo):'Lote sin número';
+  $('loteCodigo').value=l.codigo||''; $('loteVenc').value=l.venc||'';
+  $('loteCant').value=+l.cantidad||0; $('loteAbierto').value=+l.abierto||0;
+  $('loteProv').value=l.proveedor||''; $('lotePrecio').value=(+l.precio||'')||'';
+  $('loteAbiertoWrap').style.display=((+p.contenido||0)>0)?'block':'none';
+  openModal('modalLote');
+}
+function saveLoteEdit(){
+  const p=DB.productos[fichaBc]; if(!p)return;
+  const l=getLote(p,loteEditId); if(!l)return;
+  if(!p.sinLote){
+    const c=($('loteCodigo').value||'').trim(); const v=$('loteVenc').value;
+    if(!c || !v){ toast('El lote y el vencimiento son obligatorios','warn'); return; }
+    l.codigo=c; l.venc=v;
+  }
+  l.cantidad=Math.max(0,+$('loteCant').value||0);
+  l.abierto=((+p.contenido||0)>0)?Math.max(0,+$('loteAbierto').value||0):0;
+  l.proveedor=($('loteProv').value||'').trim();
+  l.precio=+$('lotePrecio').value||0;
+  if(l.cantidad===0 && l.abierto===0) p.lotes=p.lotes.filter(x=>x.id!==l.id);
+  recalc(p); save(); closeModal('modalLote'); openFicha(fichaBc); renderStock(); toast('Lote actualizado');
+}
+function delLote(){
+  const p=DB.productos[fichaBc]; if(!p)return;
+  const l=getLote(p,loteEditId); if(!l)return;
+  if(!confirm('¿Eliminar el lote '+(l.codigo||'sin número')+'? Se descuentan '+(+l.cantidad||0)+' '+(p.unidad||'u')+' del stock. El historial de movimientos se conserva.')) return;
+  p.lotes=p.lotes.filter(x=>x.id!==l.id);
+  recalc(p); save(); closeModal('modalLote'); openFicha(fichaBc); renderStock(); toast('Lote eliminado');
+}
+
 /* ============ EDITAR PRODUCTO ============ */
 let editingBc=null;
 function formatoValorDe(p){ const c=+p.contenido||0; if(c<=0)return 'unidad'; if(['10','20','50','100','250','500','1000','5000'].includes(String(c)))return String(c); return 'otro'; }
-function onEditFormatoChange(){ $('editFormatoOtroWrap').style.display=($('editFormato').value==='otro')?'block':'none'; const esFrasco=$('editFormato').value!=='unidad'; $('editAbiertoWrap').style.display=esFrasco?'block':'none'; }
+function onEditFormatoChange(){ $('editFormatoOtroWrap').style.display=($('editFormato').value==='otro')?'block':'none'; }
 function editProduct(bc){ if(!isAdmin()){ toast('Solo administradores pueden editar productos','warn'); return; } const p=DB.productos[bc]; if(!p)return;
   editingBc=bc;
   $('editName').value=p.nombre||'';
   const fv=formatoValorDe(p); $('editFormato').value=fv; $('editContenido').value=(fv==='otro'?(+p.contenido||''):'');
   $('editCat').value=p.categoria||'Otro';
-  $('editStock').value=+p.stock||0; $('editAbierto').value=+p.abierto||0;
+  $('editSinLote').checked=!!p.sinLote;
   $('editBajo').value=+p.bajo||0; $('editCrit').value=+p.critico||0;
   onEditFormatoChange();
   openModal('modalEdit');
@@ -1136,9 +1451,9 @@ function saveEditProduct(){
   if($('editFormato').value==='otro' && f.contenido<=0){ toast('Indica los mL del envase','warn'); return; }
   p.nombre=name; p.categoria=$('editCat').value;
   p.contenido=f.contenido; p.unidad=f.unidad; p.formato=f.formato;
-  p.stock=+$('editStock').value||0;
-  p.abierto=(f.contenido>0?(+$('editAbierto').value||0):0);
+  p.sinLote=$('editSinLote').checked;
   p.bajo=+$('editBajo').value||0; p.critico=+$('editCrit').value||0;
+  recalc(p);
   save(); closeModal('modalEdit'); renderStock(); if($('view-config').classList.contains('active'))renderConfig(); toast('Producto actualizado ('+f.formato+')');
 }
 function delProductFromEdit(){ const p=DB.productos[editingBc]; if(!p)return; if(confirm('¿Eliminar "'+p.nombre+'"? Se conserva el historial de movimientos.')){ delete DB.productos[editingBc]; save(); closeModal('modalEdit'); renderStock(); if($('view-config').classList.contains('active'))renderConfig(); toast('Producto eliminado'); } }
@@ -1150,14 +1465,15 @@ function exportCSV(){
   if(desde) movs=movs.filter(m=>fechaLocalISO(m.fecha)>=desde);
   if(hasta) movs=movs.filter(m=>fechaLocalISO(m.fecha)<=hasta);
   if(!movs.length){ toast('Nada que exportar','warn'); return; }
-  const h=['Fecha','Tipo','Medicamento','Codigo','Cantidad','Unidad','Centro de costo','Persona','Tipo documento','N documento','Proveedor'];
-  const rows=movs.map(m=>[fmtDate(m.fecha),m.tipo,m.nombre,m.barcode,m.cantidad,m.unidad||'',m.centro||'',m.persona||'',m.docTipo||'',m.docNum||'',m.proveedor||''].map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';'));
+  const h=['Fecha','Tipo','Medicamento','Codigo','Cantidad','Unidad','Lote','Vencimiento','Vencido','Precio unitario','Total linea','Centro de costo','Persona','Tipo documento','N documento','Proveedor'];
+  const rows=movs.map(m=>{ const pu=+m.precio||0; const tot=(m.unidad==='mL')?'':(pu>0?pu*(+m.cantidad||0):'');
+    return [fmtDate(m.fecha),m.tipo,m.nombre,m.barcode,m.cantidad,m.unidad||'',m.lote||'',m.venc?fmtVenc(m.venc):'',m.vencido?'SI':'',pu||'',tot,m.centro||'',m.persona||'',m.docTipo||'',m.docNum||'',m.proveedor||''].map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';'); });
   const csv='\uFEFF'+h.join(';')+'\n'+rows.join('\n');
   download(csv,'farmacia_'+segTipo+'_'+new Date().toISOString().slice(0,10)+'.csv','text/csv');
   toast('CSV exportado');
 }
 function backupExport(){ download(JSON.stringify(DB),'respaldo_farmacia_'+new Date().toISOString().slice(0,10)+'.json','application/json'); toast('Respaldo descargado'); }
-function backupImport(ev){ const f=ev.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!d.productos)throw 0; if(confirm('Esto reemplazará TODOS los datos actuales. ¿Continuar?')){ DB=Object.assign({productos:{},movimientos:[],documentos:{},centros:[...DEFAULT_CENTROS],personas:[],usuarios:{},aliases:{},cfg:{bajo:5,critico:2}},d); if(!DB.documentos)DB.documentos={}; delete DB.dosis; delete DB.insemMovs; save(); renderConfig(); renderStock(); toast('Datos restaurados'); } }catch(e){ toast('Archivo inválido','err'); } }; r.readAsText(f); ev.target.value=''; }
+function backupImport(ev){ const f=ev.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!d.productos)throw 0; if(confirm('Esto reemplazará TODOS los datos actuales. ¿Continuar?')){ DB=Object.assign({productos:{},movimientos:[],documentos:{},centros:[...DEFAULT_CENTROS],personas:[],usuarios:{},aliases:{},cfg:{bajo:5,critico:2}},d); if(!DB.documentos)DB.documentos={}; delete DB.dosis; delete DB.insemMovs; asegurarLotes(); save(); renderConfig(); renderStock(); toast('Datos restaurados'); } }catch(e){ toast('Archivo inválido','err'); } }; r.readAsText(f); ev.target.value=''; }
 function download(content,name,type){ const b=new Blob([content],{type}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(u),1000); }
 
 /* ============ MODALES ============ */
