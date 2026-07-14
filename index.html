@@ -310,6 +310,48 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
 .chk div{flex:1;}
 .chk b{display:block;font-size:.92rem;}
 .chk small{display:block;color:var(--muted);font-size:.78rem;line-height:1.35;}
+
+/* ===== PANEL EJECUTIVO ===== */
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.kpi{background:#fff;border:1.5px solid var(--line);border-radius:var(--r-sm);padding:14px;}
+.kpi .k-l{font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+.kpi .k-v{font-family:'Barlow Condensed';font-weight:700;font-size:1.85rem;line-height:1.15;color:var(--green-900);margin-top:3px;}
+.kpi .k-d{font-size:.78rem;font-weight:600;margin-top:2px;}
+.kpi .k-d.sube{color:var(--red-deep);}
+.kpi .k-d.baja{color:var(--green-700);}
+.kpi .k-d.igual{color:var(--muted);}
+.kpi.alerta{border-color:var(--amber);background:var(--amber-050);}
+.kpi.peligro{border-color:var(--red);background:var(--red-050);}
+.kpi.peligro .k-v{color:var(--red-deep);}
+.pan-sec{font-family:'Barlow Condensed';font-weight:700;font-size:1.15rem;color:var(--green-900);text-transform:uppercase;letter-spacing:.5px;margin:22px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--green-050);}
+.rank{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+.rank .r-l{flex:1;min-width:0;}
+.rank .r-l b{display:block;font-size:.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rank .r-l .track{height:7px;background:var(--green-050);border-radius:99px;margin-top:4px;overflow:hidden;}
+.rank .r-l .fill{height:100%;background:var(--green-500);border-radius:99px;}
+.rank .r-l .fill.rojo{background:var(--red);}
+.rank .r-v{flex:none;text-align:right;min-width:82px;}
+.rank .r-v b{font-family:'Barlow Condensed';font-size:1.15rem;font-weight:700;display:block;line-height:1.1;}
+.rank .r-v small{font-size:.7rem;color:var(--muted);}
+.pan-mes{display:flex;gap:10px;align-items:flex-end;margin-bottom:16px;}
+.pan-mes .field{flex:1;}
+.pan-vacio{text-align:center;padding:28px 16px;color:var(--muted);font-size:.92rem;}
+.pan-print{display:none;}
+
+/* ===== IMPRESIÓN / PDF ===== */
+@media print{
+  @page{ margin:14mm; }
+  body{ background:#fff !important; }
+  .app-head, .nav, .pan-mes, .btn, #lockScreen, .modal{ display:none !important; }
+  .view{ display:none !important; }
+  .view.active{ display:block !important; padding:0 !important; }
+  .pan-print{ display:block; margin-bottom:16px; border-bottom:2px solid #1d4a2c; padding-bottom:10px; }
+  .pan-print h1{ font-family:'Barlow Condensed'; font-size:1.9rem; color:#1d4a2c; }
+  .pan-print p{ font-size:.85rem; color:#555; }
+  .kpis{ grid-template-columns:repeat(4,1fr); }
+  .kpi, .rank, .pan-sec{ break-inside:avoid; }
+  .pan-sec{ break-after:avoid; }
+}
 </style>
 </head>
 <body>
@@ -436,26 +478,17 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
 
 <!-- ===================== RESUMEN ===================== -->
 <section class="view" id="view-resumen">
-  <div class="view-title">Resumen</div>
-  <div class="view-sub">Salidas de medicamentos por período</div>
+  <div class="view-title">Panel</div>
+  <div class="view-sub">Consumo, costos y alertas del período</div>
 
-  <div class="seg">
-    <button class="on" id="segOut" onclick="setSeg('salida')">Salidas</button>
-    <button id="segIn" onclick="setSeg('ingreso')">Ingresos</button>
-  </div>
-
-  <div class="filters">
-    <div class="field"><label>Desde</label><input type="date" id="fDesde" onchange="renderResumen()"></div>
-    <div class="field"><label>Hasta</label><input type="date" id="fHasta" onchange="renderResumen()"></div>
-    <div class="field" style="flex:none;display:flex;align-items:flex-end;"><button class="btn btn-ghost btn-sm" style="padding:12px 14px;" onclick="limpiarFechas()">Limpiar</button></div>
+  <div class="pan-mes">
+    <div class="field"><label>Mes</label><input type="month" id="panMes" onchange="renderResumen()"></div>
+    <div class="field" style="flex:none;display:flex;align-items:flex-end;">
+      <button class="btn btn-ghost btn-sm" style="padding:12px 14px;" onclick="panelHoy()">Mes actual</button>
+    </div>
   </div>
 
   <div id="resumenBody"></div>
-
-  <button class="btn btn-ghost" onclick="exportCSV()" style="margin-top:8px;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-    Exportar a Excel (CSV)
-  </button>
 </section>
 
 <!-- ===================== CONFIG ===================== -->
@@ -1289,145 +1322,155 @@ function doSaveSalida(){
 }
 
 /* ============ RESUMEN ============ */
-function limpiarFechas(){ $('fDesde').value=''; $('fHasta').value=''; renderResumen(); }
-let segTipo='salida';
-function setSeg(t){ segTipo=t; $('segOut').classList.toggle('on',t==='salida'); $('segIn').classList.toggle('on',t==='ingreso'); renderResumen(); }
-function renderResumen(){
-  const body=$('resumenBody'); const desde=$('fDesde').value, hasta=$('fHasta').value;
-  let movs=DB.movimientos.filter(m=>m.tipo===segTipo);
-  if(desde) movs=movs.filter(m=>fechaLocalISO(m.fecha)>=desde);
-  if(hasta) movs=movs.filter(m=>fechaLocalISO(m.fecha)<=hasta);
-  movs.sort((a,b)=>b.id-a.id);
-  if(!movs.length){ body.innerHTML='<div class="empty"><p>No hay '+(segTipo==='salida'?'salidas':'ingresos')+' en este período.</p></div>'; return; }
-  const totalU=movs.reduce((s,m)=>s+m.cantidad,0);
-  let html='<div class="stats"><div class="stat"><div class="v num">'+movs.length+'</div><div class="l">Movimientos</div></div><div class="stat"><div class="v num">'+totalU+'</div><div class="l">Unidades</div></div><div class="stat"><div class="v num">'+new Set(movs.map(m=>m.barcode)).size+'</div><div class="l">Productos</div></div></div>';
-  if(segTipo==='salida'){
-    const byC={}; movs.forEach(m=>{byC[m.centro]=(byC[m.centro]||0)+m.cantidad;});
-    const maxC=Math.max(...Object.values(byC));
-    html+='<div class="cfg-sec"><h3 style="font-size:1.15rem;margin-bottom:12px;">Por centro de costo</h3>';
-    Object.entries(byC).sort((a,b)=>b[1]-a[1]).forEach(([c,v])=>{ html+='<div class="bar-row"><div class="lab">'+esc(c)+'</div><div class="track"><div class="fill" style="width:'+(v/maxC*100)+'%"></div></div><div class="val">'+v+'</div></div>'; });
-    html+='</div>';
+/* ══════════════ PANEL EJECUTIVO ══════════════
+   Reemplaza al antiguo Resumen. Solo administradores: aquí van los precios.
+   Todo se compara contra el mes anterior, que es la pregunta de reunión:
+   "¿estamos gastando más o menos que antes, y en qué?" */
+
+function mesActual(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function mesAnterior(m){ const [a,me]=m.split('-').map(Number); const d=new Date(a,me-2,1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function nombreMes(m){ const [a,me]=m.split('-').map(Number); return new Date(a,me-1,1).toLocaleDateString('es-CL',{month:'long',year:'numeric'}); }
+function panelHoy(){ $('panMes').value=mesActual(); renderResumen(); }
+
+/* Costo real de una salida.
+   Si el retiro fue en mL, se cobra la fracción del frasco que se usó. */
+function costoMov(m){
+  if(m.tipo!=='salida') return 0;
+  const precio=+m.precio||0; if(!precio) return 0;
+  const cant=+m.cantidad||0;
+  if(m.unidad==='mL'){
+    const p=DB.productos[m.barcode]; const cont=+((p&&p.contenido)||0);
+    return cont>0 ? precio*cant/cont : 0;
   }
-  const byP={}; movs.forEach(m=>{byP[m.nombre]=(byP[m.nombre]||0)+m.cantidad;});
-  const maxP=Math.max(...Object.values(byP));
-  html+='<div class="cfg-sec"><h3 style="font-size:1.15rem;margin-bottom:12px;">Por medicamento</h3>';
-  Object.entries(byP).sort((a,b)=>b[1]-a[1]).slice(0,12).forEach(([n,v])=>{ html+='<div class="bar-row"><div class="lab">'+esc(n)+'</div><div class="track"><div class="fill" style="width:'+(v/maxP*100)+'%"></div></div><div class="val">'+v+'</div></div>'; });
-  html+='</div>';
-  html+='<h3 style="font-size:1.2rem;margin:18px 0 10px;color:var(--green-900);">Detalle</h3>';
-  html+=movs.slice(0,60).map(m=>{ const inn=m.tipo==='ingreso';
-    const sub=inn?(esc(m.docTipo||'')+(m.docNum?' '+esc(m.docNum):'')+(m.proveedor?' · '+esc(m.proveedor):'')):(esc(m.centro)+' · '+esc(m.persona));
-    return '<div class="mov"><div class="dot '+(inn?'in':'out')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="'+(inn?'M12 5v14M5 12h14':'M5 12h14M13 6l6 6-6 6')+'"/></svg></div><div class="m-info"><b>'+esc(m.nombre)+'</b><small>'+sub+' · '+fmtDate(m.fecha)+'</small></div><div class="m-qty '+(inn?'in':'out')+'">'+(inn?'+':'−')+m.cantidad+'</div></div>'; }).join('');
-  body.innerHTML=html;
+  return precio*cant;
 }
+function salidasDe(mes){ return DB.movimientos.filter(m=>m.tipo==='salida' && fechaLocalISO(m.fecha).slice(0,7)===mes); }
+function gastoDe(mes){ return salidasDe(mes).reduce((s,m)=>s+costoMov(m),0); }
 
-/* ============ CONFIG ============ */
-function renderConfig(){ $('cfgBajo').value=DB.cfg.bajo; $('cfgCrit').value=DB.cfg.critico; $('cloudGrupo').value=CLOUD.grupo||''; $('cloudNombre').value=CLOUD.nombre||''; $('cloudUrl').value=CLOUD.url||''; $('cloudAuto').checked=CLOUD.auto!==false; setCloudStatus(); renderUsuariosCfg(); renderCentrosCfg(); renderProdsCfg(); }
-function saveCfg(){ DB.cfg.bajo=+$('cfgBajo').value||0; DB.cfg.critico=+$('cfgCrit').value||0; save(); toast('Alertas actualizadas'); }
-function renderCentrosCfg(){ $('cfgCentros').innerHTML=DB.centros.map((c,i)=>'<div class="row-item"><div class="ri-name">'+esc(c)+'</div><button class="del" onclick="delCentro('+i+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>').join(''); }
-function addCentro(){ const v=($('newCentro').value||'').trim(); if(!v)return; if(DB.centros.includes(v)){toast('Ya existe','warn');return;} DB.centros.push(v); $('newCentro').value=''; save(); renderCentrosCfg(); toast('Centro agregado'); }
-function delCentro(i){ if(DB.centros.length<=1){toast('Debe quedar al menos uno','warn');return;} if(confirm('¿Eliminar "'+DB.centros[i]+'"?')){ DB.centros.splice(i,1); save(); renderCentrosCfg(); } }
-
-function renderProdsCfg(){ const arr=Object.values(DB.productos).sort((a,b)=>a.nombre.localeCompare(b.nombre)); $('cfgProdCount').textContent=arr.length;
-  if(!arr.length){ $('cfgProds').innerHTML='<p class="note">Aún no hay medicamentos. Escanea el primero en la pestaña Ingreso.</p>'; return; }
-  $('cfgProds').innerHTML=arr.map(p=>'<div class="row-item"><div class="ri-name" onclick="editProduct(\''+p.barcode+'\')" style="cursor:pointer">'+esc(p.nombre)+'<br><small style="color:var(--muted);font-weight:400">'+p.stock+' '+esc(p.unidad||'u')+' · bajo '+p.bajo+' / crít '+p.critico+'</small></div><button class="del" onclick="delProduct(\''+p.barcode+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>').join(''); }
-function delProduct(bc){ const p=DB.productos[bc]; if(!p)return; if(confirm('¿Eliminar "'+p.nombre+'"? Se borra su stock actual (se conservan los movimientos en el historial).')){ delete DB.productos[bc]; save(); renderConfig(); renderStock(); toast('Medicamento eliminado'); } }
-
-/* ============ FICHA DE PRODUCTO (la ve todo el mundo) ============ */
-let fichaBc=null;
-function openFicha(bc){
-  const p=DB.productos[bc]; if(!p)return;
-  fichaBc=bc; recalc(p);
-  const admin=isAdmin();
-  const us=ultimaSalida(bc);
-  const disp=lotesDisp(p);
-  const valor=(p.lotes||[]).reduce((s,l)=>s+((+l.precio||0)*(+l.cantidad||0)),0);
-
-  let h='<div class="ficha-h"><div class="fn"><h2>'+esc(p.nombre)+'</h2><small>'+esc(p.categoria||'')+' · cód '+esc(bc)+(p.formato?' · '+esc(p.formato):'')+'</small></div>'+
-        '<div class="fq"><div class="n">'+p.stock+'</div><div class="u">'+esc(p.unidad||'u')+'</div></div></div>';
-
-  if(!p.sinLote) h+='<div style="margin-bottom:4px;">'+vencChip(vencProx(p))+'</div>';
-
-  h+='<div class="ficha-s">Resumen</div>';
-  h+='<div class="ficha-kv"><span>Stock actual</span><b>'+p.stock+' '+esc(p.unidad||'u')+'</b></div>';
-  if(+p.contenido>0){
-    h+='<div class="ficha-kv"><span>Frasco abierto</span><b>'+(+p.abierto>0?(+p.abierto)+' mL':'ninguno')+'</b></div>';
-    h+='<div class="ficha-kv"><span>Volumen total</span><b>'+(fmtVol(totalMl(p))||'0 mL')+'</b></div>';
-  }
-  if(!p.sinLote) h+='<div class="ficha-kv"><span>Vence primero</span><b>'+esc(vencTxt(vencProx(p)))+'</b></div>';
-  if(valor>0) h+='<div class="ficha-kv"><span>Valor en bodega</span><b>'+fmtCLP(valor)+'</b></div>';
-  h+='<div class="ficha-kv"><span>Alerta stock bajo / crítico</span><b>'+(+p.bajo||0)+' / '+(+p.critico||0)+'</b></div>';
-
-  h+='<div class="ficha-s">Última salida</div>';
-  if(!us) h+='<div class="cart-empty" style="padding:14px;">Este producto nunca ha salido de bodega.</div>';
-  else{
-    h+='<div class="ficha-kv"><span>Cuándo</span><b>'+esc(fmtDate(us.fecha))+'</b></div>';
-    h+='<div class="ficha-kv"><span>Cuánto</span><b>'+us.cantidad+' '+esc(us.unidad||'u')+'</b></div>';
-    h+='<div class="ficha-kv"><span>Quién retiró</span><b>'+esc(us.persona||'—')+'</b></div>';
-    h+='<div class="ficha-kv"><span>Centro de costo</span><b>'+esc(us.centro||'—')+'</b></div>';
-    if(us.lote) h+='<div class="ficha-kv"><span>Lote</span><b>'+esc(us.lote)+(us.vencido?' ⚠ vencido':'')+'</b></div>';
-  }
-
-  if(!p.sinLote){
-    h+='<div class="ficha-s">Lotes en bodega ('+disp.length+')</div>';
-    if(!disp.length) h+='<div class="cart-empty" style="padding:14px;">Sin existencias. Los lotes aparecen al registrar un ingreso.</div>';
-    else h+=disp.map(l=>{
-      const vc=vencClase(l.venc);
-      return '<div class="lote-row'+(vc==='vencido'?' venc-vencido':'')+'"'+(admin?' onclick="editLote(\''+l.id+'\')" style="cursor:pointer;"':'')+'>'+
-        '<div class="li"><b>'+(l.codigo?'Lote '+esc(l.codigo):'Sin lote registrado')+'</b>'+
-        '<small>'+esc(vencTxt(l.venc))+(l.proveedor?' · '+esc(l.proveedor):'')+((+l.precio>0)?' · '+fmtCLP(l.precio)+' c/u':'')+'</small></div>'+
-        '<div class="lq"><div class="n">'+(+l.cantidad||0)+'</div><div class="u">'+esc(p.unidad||'u')+((+l.abierto>0)?' · '+(+l.abierto)+' mL':'')+'</div></div></div>';
-    }).join('');
-    if(admin && disp.length) h+='<div class="note" style="margin-top:2px;">Toca un lote para corregir su cantidad, número o vencimiento.</div>';
-  }
-
-  const movs=DB.movimientos.filter(m=>m.barcode===bc).sort((a,b)=>b.id-a.id).slice(0,12);
-  h+='<div class="ficha-s">Movimientos recientes</div>';
-  if(!movs.length) h+='<div class="cart-empty" style="padding:14px;">Sin movimientos.</div>';
-  else h+=movs.map(m=>{ const inn=m.tipo==='ingreso';
-    const sub=(inn?(m.proveedor||m.docTipo||'Ingreso'):((m.persona||'')+(m.centro?' · '+m.centro:'')))+(m.lote?' · lote '+m.lote:'');
-    return '<div class="mov"><div class="dot '+(inn?'in':'out')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="'+(inn?'M12 5v14M5 12h14':'M5 12h14M13 6l6 6-6 6')+'"/></svg></div><div class="m-info"><b>'+esc(sub)+'</b><small>'+fmtDate(m.fecha)+'</small></div><div class="m-qty '+(inn?'in':'out')+'">'+(inn?'+':'−')+m.cantidad+' '+esc(m.unidad||'')+'</div></div>';
+function barras(datos, total, titulo, formato, rojo){
+  if(!datos.length) return '';
+  const max=Math.max.apply(null, datos.map(d=>d.valor)) || 1;
+  let h='<div class="pan-sec">'+titulo+'</div>';
+  h+=datos.map(d=>{
+    const pct=total>0?Math.round(d.valor/total*100):0;
+    return '<div class="rank"><div class="r-l"><b>'+esc(d.nombre)+'</b>'+
+      '<div class="track"><div class="fill'+(rojo?' rojo':'')+'" style="width:'+(d.valor/max*100)+'%"></div></div></div>'+
+      '<div class="r-v"><b>'+formato(d.valor)+'</b><small>'+(d.extra||(pct+'%'))+'</small></div></div>';
   }).join('');
-
-  if(admin) h+='<button class="btn btn-ghost" style="margin-top:18px;" onclick="closeModal(\'modalFicha\');editProduct(\''+bc+'\')">Editar producto</button>';
-  $('fichaBody').innerHTML=h;
-  openModal('modalFicha');
+  return h;
 }
 
-/* ============ AJUSTAR UN LOTE (solo admin) ============ */
-let loteEditId=null;
-function editLote(id){
-  if(!isAdmin()){ toast('Solo administradores pueden ajustar lotes','warn'); return; }
-  const p=DB.productos[fichaBc]; if(!p)return;
-  const l=getLote(p,id); if(!l)return;
-  loteEditId=id;
-  $('loteTitle').textContent=l.codigo?('Lote '+l.codigo):'Lote sin número';
-  $('loteCodigo').value=l.codigo||''; $('loteVenc').value=l.venc||'';
-  $('loteCant').value=+l.cantidad||0; $('loteAbierto').value=+l.abierto||0;
-  $('loteProv').value=l.proveedor||''; $('lotePrecio').value=(+l.precio||'')||'';
-  $('loteAbiertoWrap').style.display=((+p.contenido||0)>0)?'block':'none';
-  openModal('modalLote');
-}
-function saveLoteEdit(){
-  const p=DB.productos[fichaBc]; if(!p)return;
-  const l=getLote(p,loteEditId); if(!l)return;
-  if(!p.sinLote){
-    const c=($('loteCodigo').value||'').trim(); const v=$('loteVenc').value;
-    if(!c || !v){ toast('El lote y el vencimiento son obligatorios','warn'); return; }
-    l.codigo=c; l.venc=v;
+function renderResumen(){
+  const body=$('resumenBody');
+
+  // ── Solo administradores ──
+  if(!isAdmin()){
+    body.innerHTML='<div class="pan-vacio"><b style="display:block;font-size:1.05rem;color:var(--green-900);margin-bottom:6px;">Panel restringido</b>'+
+      'Aquí se muestran costos y precios de compra. Solo los administradores pueden verlo.<br>Tu inventario y tus retiros los tienes en Stock.</div>';
+    return;
   }
-  l.cantidad=Math.max(0,+$('loteCant').value||0);
-  l.abierto=((+p.contenido||0)>0)?Math.max(0,+$('loteAbierto').value||0):0;
-  l.proveedor=($('loteProv').value||'').trim();
-  l.precio=+$('lotePrecio').value||0;
-  if(l.cantidad===0 && l.abierto===0) p.lotes=p.lotes.filter(x=>x.id!==l.id);
-  recalc(p); save(); closeModal('modalLote'); openFicha(fichaBc); renderStock(); toast('Lote actualizado');
+
+  if(!$('panMes').value) $('panMes').value=mesActual();
+  const mes=$('panMes').value;
+  const prev=mesAnterior(mes);
+
+  const movs=salidasDe(mes);
+  const gasto=gastoDe(mes), gastoPrev=gastoDe(prev);
+  const unidades=movs.reduce((s,m)=>s+(m.unidad==='mL'?0:(+m.cantidad||0)),0);
+
+  // ── Valor y vencimientos de la bodega (situación de HOY, no del mes) ──
+  let valorBodega=0, nVencidos=0, valorVencido=0, nPorVencer=0, valorPorVencer=0;
+  const alertaLotes=[];
+  Object.values(DB.productos).forEach(p=>{
+    (p.lotes||[]).forEach(l=>{
+      const v=(+l.precio||0)*(+l.cantidad||0);
+      valorBodega+=v;
+      const c=vencClase(l.venc);
+      if(c==='vencido'){ nVencidos++; valorVencido+=v; alertaLotes.push({p:p,l:l,c:c,v:v}); }
+      else if(c==='pronto'){ nPorVencer++; valorPorVencer+=v; alertaLotes.push({p:p,l:l,c:c,v:v}); }
+    });
+  });
+
+  // ── Encabezado que sale al imprimir ──
+  let h='<div class="pan-print"><h1>Farmacia · '+esc(CLOUD.grupo||'')+'</h1>'+
+        '<p>Panel de '+esc(nombreMes(mes))+' · emitido el '+new Date().toLocaleDateString('es-CL')+'</p></div>';
+
+  // ── Los cuatro números ──
+  let dif='', clase='igual';
+  if(gastoPrev>0){
+    const pct=Math.round((gasto-gastoPrev)/gastoPrev*100);
+    clase = pct>0?'sube':(pct<0?'baja':'igual');
+    dif=(pct>0?'▲ +':(pct<0?'▼ ':''))+pct+'% vs '+nombreMes(prev).split(' ')[0];
+  } else if(gasto>0){ dif='sin mes anterior para comparar'; }
+
+  h+='<div class="kpis">';
+  h+='<div class="kpi"><div class="k-l">Gasto del mes</div><div class="k-v">'+(gasto>0?fmtCLP(Math.round(gasto)):'—')+'</div><div class="k-d '+clase+'">'+esc(dif)+'</div></div>';
+  h+='<div class="kpi"><div class="k-l">Salidas</div><div class="k-v">'+movs.length+'</div><div class="k-d igual">'+unidades+' unidades</div></div>';
+  h+='<div class="kpi"><div class="k-l">Valor en bodega</div><div class="k-v">'+(valorBodega>0?fmtCLP(Math.round(valorBodega)):'—')+'</div><div class="k-d igual">hoy</div></div>';
+  const clsV=nVencidos?'peligro':(nPorVencer?'alerta':'');
+  h+='<div class="kpi '+clsV+'"><div class="k-l">Vencimientos</div><div class="k-v">'+(nVencidos+nPorVencer)+'</div><div class="k-d igual">'+
+     (nVencidos?nVencidos+' vencido'+(nVencidos>1?'s':''):'')+(nVencidos&&nPorVencer?' · ':'')+(nPorVencer?nPorVencer+' por vencer':'')+(!nVencidos&&!nPorVencer?'todo al día':'')+'</div></div>';
+  h+='</div>';
+
+  if(!movs.length && !alertaLotes.length && !valorBodega){
+    body.innerHTML=h+'<div class="pan-vacio">No hay movimientos en '+esc(nombreMes(mes))+'.</div>'+botonesPanel();
+    return;
+  }
+
+  // ── Centros de costo: la pregunta de reunión ──
+  const porC={};
+  movs.forEach(m=>{ const c=m.centro||'Sin asignar'; if(!porC[c])porC[c]={gasto:0,u:0}; porC[c].gasto+=costoMov(m); porC[c].u+=(m.unidad==='mL'?0:(+m.cantidad||0)); });
+  const centros=Object.entries(porC).map(([c,d])=>({nombre:c, valor:d.gasto, extra:d.u+' u'})).sort((a,b)=>b.valor-a.valor);
+  if(centros.length && gasto>0) h+=barras(centros, gasto, 'Consumo por centro de costo', v=>fmtCLP(Math.round(v)));
+  else if(centros.length){
+    const cu=Object.entries(porC).map(([c,d])=>({nombre:c, valor:d.u, extra:''})).sort((a,b)=>b.valor-a.valor);
+    h+=barras(cu, cu.reduce((s,d)=>s+d.valor,0), 'Consumo por centro de costo (unidades)', v=>v);
+  }
+
+  // ── Medicamentos que más plata se llevan ──
+  const porP={};
+  movs.forEach(m=>{ if(!porP[m.nombre])porP[m.nombre]={gasto:0,u:0}; porP[m.nombre].gasto+=costoMov(m); porP[m.nombre].u+=(+m.cantidad||0); });
+  const prods=Object.entries(porP).map(([n,d])=>({nombre:n, valor:d.gasto, extra:fmtCLP(0)?'':''})).filter(d=>d.valor>0).sort((a,b)=>b.valor-a.valor).slice(0,8);
+  if(prods.length) h+=barras(prods, gasto, 'Medicamentos que más gastan', v=>fmtCLP(Math.round(v)));
+  else {
+    const pu=Object.entries(porP).map(([n,d])=>({nombre:n, valor:d.u})).sort((a,b)=>b.valor-a.valor).slice(0,8);
+    if(pu.length) h+=barras(pu, pu.reduce((s,d)=>s+d.valor,0), 'Medicamentos más retirados', v=>v);
+  }
+
+  // ── Quién retira (auditoría interna) ──
+  const porQ={};
+  movs.forEach(m=>{ const q=m.persona||'Sin registrar'; if(!porQ[q])porQ[q]={n:0,gasto:0}; porQ[q].n++; porQ[q].gasto+=costoMov(m); });
+  const gente=Object.entries(porQ).map(([n,d])=>({nombre:n, valor:d.n, extra:d.gasto>0?fmtCLP(Math.round(d.gasto)):''})).sort((a,b)=>b.valor-a.valor).slice(0,8);
+  if(gente.length) h+=barras(gente, movs.length, 'Quién retira', v=>v+(v===1?' retiro':' retiros'));
+
+  // ── Alertas que exigen una decisión ──
+  if(alertaLotes.length){
+    alertaLotes.sort((a,b)=>String(a.l.venc).localeCompare(String(b.l.venc)));
+    h+='<div class="pan-sec">Vencimientos · '+fmtCLP(Math.round(valorVencido+valorPorVencer))+' en juego</div>';
+    h+=alertaLotes.slice(0,12).map(x=>
+      '<div class="lote-row'+(x.c==='vencido'?' venc-vencido':'')+'"><div class="li"><b>'+esc(x.p.nombre)+'</b>'+
+      '<small>'+(x.l.codigo?'lote '+esc(x.l.codigo)+' · ':'')+esc(vencTxt(x.l.venc))+'</small></div>'+
+      '<div class="lq"><div class="n">'+(+x.l.cantidad||0)+'</div><div class="u">'+(x.v>0?fmtCLP(Math.round(x.v)):esc(x.p.unidad||'u'))+'</div></div></div>').join('');
+  }
+
+  const faltan=Object.values(DB.productos).filter(p=>['zero','crit'].includes(statusOf(p))).sort((a,b)=>a.stock-b.stock);
+  if(faltan.length){
+    h+='<div class="pan-sec">Hay que reponer ('+faltan.length+')</div>';
+    h+=faltan.slice(0,12).map(p=>{ const s=statusOf(p);
+      return '<div class="lote-row"><div class="li"><b>'+esc(p.nombre)+'</b><small>'+(s==='zero'?'AGOTADO':'crítico')+' · mínimo '+(+p.bajo||0)+'</small></div>'+
+             '<div class="lq"><div class="n">'+p.stock+'</div><div class="u">'+esc(p.unidad||'u')+'</div></div></div>'; }).join('');
+  }
+
+  body.innerHTML=h+botonesPanel();
 }
-function delLote(){
-  const p=DB.productos[fichaBc]; if(!p)return;
-  const l=getLote(p,loteEditId); if(!l)return;
-  if(!confirm('¿Eliminar el lote '+(l.codigo||'sin número')+'? Se descuentan '+(+l.cantidad||0)+' '+(p.unidad||'u')+' del stock. El historial de movimientos se conserva.')) return;
-  p.lotes=p.lotes.filter(x=>x.id!==l.id);
-  recalc(p); save(); closeModal('modalLote'); openFicha(fichaBc); renderStock(); toast('Lote eliminado');
+
+function botonesPanel(){
+  return '<button class="btn btn-ghost" style="margin-top:20px;" onclick="window.print()">'+
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>'+
+    ' Exportar panel (PDF)</button>'+
+    '<button class="btn btn-ghost" style="margin-top:8px;" onclick="exportCSV()">'+
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>'+
+    ' Exportar movimientos del mes (CSV)</button>';
 }
 
 /* ============ EDITAR PRODUCTO ============ */
@@ -1460,17 +1503,16 @@ function delProductFromEdit(){ const p=DB.productos[editingBc]; if(!p)return; if
 
 /* ============ CSV / RESPALDO ============ */
 function exportCSV(){
-  const desde=$('fDesde').value, hasta=$('fHasta').value;
-  let movs=DB.movimientos.filter(m=>m.tipo===segTipo);
-  if(desde) movs=movs.filter(m=>fechaLocalISO(m.fecha)>=desde);
-  if(hasta) movs=movs.filter(m=>fechaLocalISO(m.fecha)<=hasta);
-  if(!movs.length){ toast('Nada que exportar','warn'); return; }
+  const mes=$('panMes').value||mesActual();
+  let movs=DB.movimientos.filter(m=>fechaLocalISO(m.fecha).slice(0,7)===mes);
+  movs.sort((a,b)=>b.id-a.id);
+  if(!movs.length){ toast('No hay movimientos en '+nombreMes(mes),'warn'); return; }
   const h=['Fecha','Tipo','Medicamento','Codigo','Cantidad','Unidad','Lote','Vencimiento','Vencido','Precio unitario','Total linea','Centro de costo','Persona','Tipo documento','N documento','Proveedor'];
   const rows=movs.map(m=>{ const pu=+m.precio||0; const tot=(m.unidad==='mL')?'':(pu>0?pu*(+m.cantidad||0):'');
     return [fmtDate(m.fecha),m.tipo,m.nombre,m.barcode,m.cantidad,m.unidad||'',m.lote||'',m.venc?fmtVenc(m.venc):'',m.vencido?'SI':'',pu||'',tot,m.centro||'',m.persona||'',m.docTipo||'',m.docNum||'',m.proveedor||''].map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';'); });
   const csv='\uFEFF'+h.join(';')+'\n'+rows.join('\n');
-  download(csv,'farmacia_'+segTipo+'_'+new Date().toISOString().slice(0,10)+'.csv','text/csv');
-  toast('CSV exportado');
+  download(csv,'farmacia_'+(CLOUD.grupo||'campo').replace(/[^\w-]/g,'')+'_'+mes+'.csv','text/csv');
+  toast('CSV exportado · '+movs.length+' movimientos');
 }
 function backupExport(){ download(JSON.stringify(DB),'respaldo_farmacia_'+new Date().toISOString().slice(0,10)+'.json','application/json'); toast('Respaldo descargado'); }
 function backupImport(ev){ const f=ev.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!d.productos)throw 0; if(confirm('Esto reemplazará TODOS los datos actuales. ¿Continuar?')){ DB=Object.assign({productos:{},movimientos:[],documentos:{},centros:[...DEFAULT_CENTROS],personas:[],usuarios:{},aliases:{},cfg:{bajo:5,critico:2}},d); if(!DB.documentos)DB.documentos={}; delete DB.dosis; delete DB.insemMovs; asegurarLotes(); save(); renderConfig(); renderStock(); toast('Datos restaurados'); } }catch(e){ toast('Archivo inválido','err'); } }; r.readAsText(f); ev.target.value=''; }
