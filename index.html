@@ -313,7 +313,9 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
 
 /* ===== PANEL EJECUTIVO ===== */
 .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-.kpi{background:#fff;border:1.5px solid var(--line);border-radius:var(--r-sm);padding:14px;}
+.kpi{background:#fff;border:1.5px solid var(--line);border-radius:var(--r-sm);padding:14px;box-shadow:0 1px 3px rgba(15,64,50,.06);border-top:3px solid var(--green-700);}
+.kpi.peligro{border-top-color:var(--red-deep);}
+.kpi.alerta{border-top-color:var(--amber);}
 .kpi .k-l{font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
 .kpi .k-v{font-family:'Barlow Condensed';font-weight:700;font-size:1.85rem;line-height:1.15;color:var(--green-900);margin-top:3px;}
 .kpi .k-d{font-size:.78rem;font-weight:600;margin-top:2px;}
@@ -337,20 +339,39 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
 .pan-mes .field{flex:1;}
 .pan-vacio{text-align:center;padding:28px 16px;color:var(--muted);font-size:.92rem;}
 .pan-print{display:none;}
+.pp-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;}
+.pp-brand{display:flex;gap:11px;align-items:center;}
+.pp-logo{width:46px;height:46px;border-radius:10px;background:#1d4a2c;display:grid;place-items:center;flex:none;}
+.pp-logo svg{width:27px;height:27px;}
+.pp-name{font-family:'Barlow Condensed';font-weight:700;font-size:1.65rem;color:#1d4a2c;text-transform:uppercase;letter-spacing:.6px;line-height:1;}
+.pp-campo{font-size:.86rem;color:#333;margin-top:2px;}
+.pp-meta{text-align:right;font-size:.82rem;color:#444;line-height:1.55;}
+.pp-report{font-family:'Barlow Condensed';font-weight:600;font-size:1.1rem;color:#1d4a2c;text-transform:uppercase;letter-spacing:.5px;}
+.pp-conf{margin-top:5px;display:inline-block;border:1.2px solid #b03030;color:#b03030;font-size:.64rem;font-weight:700;letter-spacing:.6px;padding:2px 8px;border-radius:4px;}
+.pan-foot{display:none;}
 
 /* ===== IMPRESIÓN / PDF ===== */
 @media print{
+  *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
   @page{ margin:14mm; }
   body{ background:#fff !important; }
-  .app-head, .nav, .pan-mes, .btn, #lockScreen, .modal{ display:none !important; }
+  .app-head, .nav, .pan-mes, .btn, #lockScreen, .modal, #userChip{ display:none !important; }
   .view{ display:none !important; }
   .view.active{ display:block !important; padding:0 !important; }
-  .pan-print{ display:block; margin-bottom:16px; border-bottom:2px solid #1d4a2c; padding-bottom:10px; }
-  .pan-print h1{ font-family:'Barlow Condensed'; font-size:1.9rem; color:#1d4a2c; }
-  .pan-print p{ font-size:.85rem; color:#555; }
-  .kpis{ grid-template-columns:repeat(4,1fr); }
-  .kpi, .rank, .pan-sec{ break-inside:avoid; }
-  .pan-sec{ break-after:avoid; }
+  .view-title, .view-sub{ display:none !important; }
+  .pan-print{ display:block; margin-bottom:18px; border-bottom:2.5px solid #1d4a2c; padding-bottom:12px; }
+  .kpis{ grid-template-columns:repeat(4,1fr); gap:8px; }
+  .kpi{ border:1px solid #cfd8d2; box-shadow:none; border-top:3px solid #1d4a2c; padding:10px; }
+  .kpi .k-v{ font-size:1.4rem; color:#1d4a2c; }
+  .kpi.peligro .k-v{ color:#8f1c12; }
+  .rank .r-l .track{ background:#e6efe9; }
+  .rank .r-l .fill{ background:#2e8b63; }
+  .rank .r-l .fill.rojo{ background:#c0392b; }
+  .lote-row{ border:1px solid #d5d5d5; }
+  .lote-row.venc-vencido{ border-color:#c0392b; background:#fbeceb; }
+  .pan-sec{ break-after:avoid; color:#1d4a2c; border-bottom-color:#cfe0d6; }
+  .kpi, .rank, .lote-row, .pan-sec{ break-inside:avoid; }
+  .pan-foot{ display:block; margin-top:22px; border-top:1px solid #ccc; padding-top:8px; font-size:.68rem; color:#888; text-align:center; }
 }
 </style>
 </head>
@@ -607,7 +628,7 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
           </select>
         </div>
         <div class="field"><label>Categoría</label>
-          <select id="newCat"><option>Antibiótico</option><option>Antiinflamatorio</option><option>Antiparasitario</option><option>Vitamina/Mineral</option><option>Vacuna</option><option>Hormonal</option><option>Sellador/Mama</option><option>Otro</option></select>
+          <select id="newCat"><option>Antibiótico / antimicrobiano</option><option>Antiinflamatorio (AINE / corticoide)</option><option>Antiparasitario</option><option>Vitaminas y minerales</option><option>Vacuna</option><option>Hormonal / reproductivo</option><option>Cardiotónico / analéptico</option><option>Suero / fluidoterapia</option><option>Metabólico (calcio, cetosis)</option><option>Anestésico / sedante / analgésico</option><option>Cicatrizante / antiséptico / tópico</option><option>Terapia mamaria / sellador</option><option>Digestivo / ruminal</option><option>Respiratorio / broncodilatador</option><option>Insumo / Artículo</option><option>Otro</option></select>
         </div>
       </div>
       <div class="field" id="newFormatoOtroWrap" style="display:none;"><label>Contenido del frasco/envase en mL</label><input type="number" id="newContenido" inputmode="numeric" min="0" placeholder="Ej: 30"></div>
@@ -645,7 +666,7 @@ input,select,textarea{font-family:inherit;font-size:1rem;width:100%;}
           </select>
         </div>
         <div class="field"><label>Categoría</label>
-          <select id="editCat"><option>Antibiótico</option><option>Antiinflamatorio</option><option>Antiparasitario</option><option>Vitamina/Mineral</option><option>Vacuna</option><option>Hormonal</option><option>Sellador/Mama</option><option>Otro</option></select>
+          <select id="editCat"><option>Antibiótico / antimicrobiano</option><option>Antiinflamatorio (AINE / corticoide)</option><option>Antiparasitario</option><option>Vitaminas y minerales</option><option>Vacuna</option><option>Hormonal / reproductivo</option><option>Cardiotónico / analéptico</option><option>Suero / fluidoterapia</option><option>Metabólico (calcio, cetosis)</option><option>Anestésico / sedante / analgésico</option><option>Cicatrizante / antiséptico / tópico</option><option>Terapia mamaria / sellador</option><option>Digestivo / ruminal</option><option>Respiratorio / broncodilatador</option><option>Insumo / Artículo</option><option>Otro</option></select>
         </div>
       </div>
       <div class="field" id="editFormatoOtroWrap" style="display:none;"><label>Contenido del envase en mL</label><input type="number" id="editContenido" inputmode="numeric" min="0" placeholder="Ej: 30"></div>
@@ -1465,8 +1486,11 @@ function renderResumen(){
   });
 
   // ── Encabezado que sale al imprimir ──
-  let h='<div class="pan-print"><h1>Farmacia · '+esc(CLOUD.grupo||'')+'</h1>'+
-        '<p>Panel de '+esc(nombreMes(mes))+' · emitido el '+new Date().toLocaleDateString('es-CL')+'</p></div>';
+  let h='<div class="pan-print"><div class="pp-head">'+
+        '<div class="pp-brand"><div class="pp-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11h14c0 4-2.5 7-7 7s-7-3-7-7z"/><path d="M4 11h16"/><path d="M13.5 10.5 19 4.5"/><circle cx="19.5" cy="4" r="1.4"/></svg></div>'+
+        '<div><div class="pp-name">Control de Farmacia</div><div class="pp-campo">Campo: '+esc(CLOUD.grupo||'—')+'</div></div></div>'+
+        '<div class="pp-meta"><div class="pp-report">Panel de Gestión</div><div>Período: <b>'+esc(nombreMes(mes))+'</b></div><div>Emitido: '+new Date().toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'})+'</div><div class="pp-conf">CONFIDENCIAL · USO INTERNO</div></div>'+
+        '</div></div>';
 
   // ── Los cuatro números ──
   let dif='', clase='igual';
@@ -1542,7 +1566,8 @@ function renderResumen(){
 }
 
 function botonesPanel(){
-  return '<button class="btn btn-ghost" style="margin-top:20px;" onclick="window.print()">'+
+  return '<div class="pan-foot">Informe generado por Control de Farmacia · Campo '+esc(CLOUD.grupo||'—')+' · '+new Date().toLocaleDateString('es-CL')+' · Documento de uso interno</div>'+
+    '<button class="btn btn-ghost" style="margin-top:20px;" onclick="window.print()">'+
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>'+
     ' Exportar panel (PDF)</button>'+
     '<button class="btn btn-ghost" style="margin-top:8px;" onclick="exportCSV()">'+
